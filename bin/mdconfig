@@ -1,0 +1,22 @@
+module Mdiary
+
+  module DiaryConfig
+
+    def default_n
+      9
+    end
+    def data_dir
+      "path/to/mdiary/data"
+    end
+    def text_dir
+      File.join(data_dir, 'days')
+    end
+    def trash_dir
+      File.join(data_dir, 'trash')
+    end
+
+  end
+
+end
+
+$MDIARYCONF = Mdiary::DiaryConfig
