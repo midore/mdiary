@@ -19,7 +19,7 @@ module Mdiary
 
     def to_s
       ary = [posted?, created_s, @title, @category]
-      printf "\t[%s]\s[%-16s]\s[%s]\s(%s)\n" % ary
+      printf "\s\s[%s]\s[%-16s]\s[%s]\s(%s)\n" % ary
     end
 
     def detail
@@ -373,20 +373,11 @@ module Mdiary
 
     def obj_diary(x)
       begin
-        (@st.nil?) ? search_key(x) : search_text(x)
+        (@st.nil?) ? h = find_v(x) : h = find_t(x)
+        to_obj(h, x) if h
       rescue
         return nil
       end
-    end
-
-    def search_key(x)
-      h = find_v(x)
-      to_obj(h, x) if h
-    end
-
-    def search_text(x)
-      h = find_t(x)
-      to_obj(h, x) if h
     end
  
   end
