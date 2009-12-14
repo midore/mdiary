@@ -1,0 +1,43 @@
+Usage
+
+after edit files "bin/mdconfig" and "bin/mdiary-run.rb",
+
+[Add]
+$ ./mdiary-run.rb -a
+$ ./mdiary-run.rb -a 'my title'
+$ ./mdiary-run.rb -a 'my title' -t '2009/12/01'
+$ ./mdiary-run.rb -at '2010/01/01 10:00'
+
+[List]
+$ ./mdiary-run.rb -l
+$ ./mdiary-run.rb -l 3
+$ ./mdiary-run.rb -d 2009-12 -l
+$ ./mdiary-run.rb -d 2009-12 -l 30
+$ ./mdiary-run.rb -d 2010 -l 30
+
+[Select today's files]
+$ ./mdiary-run.rb -today
+
+[Search]
+$ ./mdiary-run.rb -s 'my'
+$ ./mdiary-run.rb -d 2009-12 -s 'my'
+
+[SearchTextContents]
+$ ./mdiary-run.rb -st 'my'
+$ ./mdiary-run.rb -d 2009-12 -st 'my'
+
+[Select plus mark]
+$ ./mdiary-run.rb -d 2009-12 -s +
+
+[Ailas]
+$ vi .bashrc
+# add 
+ alias 'memo'='/path/to/mdiary/bin/mdiary-run.rb'
+
+$ source .bashrc
+$ memo -l
+
+Licence
+Copyright (C) 2009 midore
+mdiary is licensed under the GPLv2
+

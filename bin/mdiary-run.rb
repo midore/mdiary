@@ -1,8 +1,9 @@
+#!/path/to/your/ruby191
 # coding: utf-8
 
 #------------------------------------------
 # mdiary-run.rb
-# last: 2009-12-10
+# last: 2009-12-14
 # ruby 1.9.1p376 
 #------------------------------------------
 
@@ -13,8 +14,5 @@ $LOAD_PATH.delete(".")
 load 'mdconfig', wrap=true
 require 'mdiary'
 
-start = Mdiary::Main.new().start
-abort unless start
-arg = ARGV
-Mdiary::Main.new().command(arg)
+Mdiary::Main.new().start(ARGV)
 

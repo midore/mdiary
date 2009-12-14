@@ -7,7 +7,7 @@ module Mdiary
       @control = 'yes'
       @title = title
       @path = nil
-      @category = nil
+      @category = 'diary'
     end
 
     attr_reader :path
@@ -27,8 +27,6 @@ module Mdiary
     end
 
     def draft
-      @title = 'New Title' unless @title
-      @category = 'diary'
       @date = created_s 
       a = [:@date, :@control, :@category, :@title, :@content]
       to_txt(a)
@@ -81,35 +79,13 @@ module Mdiary
 
     include $MDIARYCONF
 
-    def initialize(option=nil)
-      @option = option
+    def initialize
       @start = check_conf
     end
 
-    def start
+    def start(arg)
       return error_conf unless @start
-      return true if @start
-    end
-
-    def command(arg)
-      x, opt2, opt3, opt4 = arg
-      case x
-      when '-a'
-        Add.new(opt2, nil).base unless opt3
-        Add.new(opt2, opt4).base if opt3 == '-t'
-      when '-at'
-        Add.new(nil, opt2).base
-      when '-l'
-        n = opt2
-        ChoiceDir.new().base_view(n)
-      when '-d'
-        d, n = opt2, opt4
-        ChoiceDir.new(d).base_view(n) if opt3 == '-l'
-        ChoiceDir.new(d).base_search(n) if opt3 == '-s'
-      when '-s'
-        w = opt2
-        ChoiceDir.new().base_search(w)
-       end
+      command(arg)
     end
 
     def text_open(path)
@@ -131,20 +107,47 @@ module Mdiary
 
     private
 
+    def command(arg)
+      x, a, b, c = arg
+      case x
+      when '-a'
+        tit = default_title unless a
+        tit = a if a
+        Add.new(tit, nil).base unless b
+        Add.new(tit, c).base if b == '-t'
+      when '-at'
+        Add.new(default_title, a).base if a
+      when '-l'
+        ChoiceDir.new().base_view(a)
+      when '-d'
+        ChoiceDir.new(a).base_view(c) if b == '-l'
+        request_search(a, b ,c) if b =~ /\-s$|\-st$/
+      when /\-s$|\-st$/
+        request_search(nil, x, a)
+      when '-today'
+        w = Time.now.strftime("%Y/%m/%d")
+        ChoiceDir.new().base_search(w)
+      end
+    end
+
+    def request_search(d, st, w)
+      ChoiceDir.new(d).base_search(w, st)
+    end
+
     def exist?(dir)
       FileTest.exist?(dir)
     end
 
     def check_conf
-      a, b = true, true
       return false unless exist?(data_dir)
+      a, b = true, true
       a = make_dir(trash_dir) unless exist?(trash_dir)
       b = make_dir(text_dir) unless exist?(text_dir)
-      return true if a || b
+      return true if a and b
     end
 
     def error_conf
-      print "Error: Directory.\n=> Need edit config file.(bin/config)\n"
+      print "Error: Directory.\n=> Need edit config file.(bin/mdconfig)\n"
     end
 
     def nowdir
@@ -187,7 +190,6 @@ module Mdiary
       return nil unless @now_dir
       return nil unless path = set_path
       text = Diary.new(@title, @t).draft
-      # path/to/text_dir/days/2009-10/xxxx.txt
       writer(path, text)
       text_open(path)
     end
@@ -228,26 +230,30 @@ module Mdiary
     end
 
     def base_view(n)
-      set_num(n)
+      set_i_num(n)
       View.new(@num, @now_dir).base if @now_dir
       View.new(@num, @now_dir_a).base_a if @now_dir_a
     end
 
-    def base_search(w)
-      set_w(w)
-      return false unless @word
-      Search.new(@word, @now_dir).base if @now_dir
-      Search.new(@word, @now_dir_a).base_a if @now_dir_a
+    def base_search(w, st=nil)
+      set_i_w(w)
+      return nil unless @word
+      if @now_dir
+        Search.new(@word, @now_dir, st).base
+      elsif @now_dir_a
+        Search.new(@word, @now_dir_a, st).base_a
+      end
     end
  
     private
 
-    def set_num(n)
+    def set_i_num(n)
       @num = default_n unless n
       @num = n.to_i if n
     end
 
-    def set_w(w)
+    def set_i_w(w)
+      w = '\+' if w == '+'
       begin
         @word = Regexp.new(w,true)
       rescue
@@ -307,7 +313,7 @@ module Mdiary
     private
 
     def load_obj(d)
-      @num = 90 unless @num
+      @num = 60 unless @num
       Find.find(d){|x| 
         break if @ary.size > @num - 1
         next unless File.extname(x) == '.txt'
@@ -345,13 +351,15 @@ module Mdiary
 
   class Search < View
 
-    def initialize(word, dir)
+    def initialize(word, dir, st=nil)
       @word = word
       @dir = dir
       @ary = Array.new
+      @st = st if st == '-st'
     end
 
     def base
+      @plus = 'plus' if @word == /\+/i
       load_obj(@dir)
       view
     end
@@ -365,11 +373,20 @@ module Mdiary
 
     def obj_diary(x)
       begin
-        h = text_find_w(x, @word)
-        to_obj(h, x) if h
+        (@st.nil?) ? search_key(x) : search_text(x)
       rescue
         return nil
       end
+    end
+
+    def search_key(x)
+      h = find_v(x)
+      to_obj(h, x) if h
+    end
+
+    def search_text(x)
+      h = find_t(x)
+      to_obj(h, x) if h
     end
  
   end
@@ -426,7 +443,6 @@ module Mdiary
         next if i == :@diary
         self.instance_variable_set(i, nil)
       }
-      #@num, @ary = nil, nil
     end
 
   end

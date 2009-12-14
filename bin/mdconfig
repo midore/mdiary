@@ -3,10 +3,13 @@ module Mdiary
   module DiaryConfig
 
     def default_n
-      9
+      7
+    end
+    def default_title
+      'New Title'
     end
     def data_dir
-      "path/to/mdiary/data"
+      'path/to/yourdir'
     end
     def text_dir
       File.join(data_dir, 'days')

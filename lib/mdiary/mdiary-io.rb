@@ -16,32 +16,48 @@ module Mdiary
       IO.readlines(path)
     end
 
-    def mark_content(ary)
-      @mark = ary.find_index("--content\n") unless ary.empty?
+    def reader_v(path)
+      return nil unless FileTest.exist?(path)
+      arr = []
+      f = File.open(path)
+      f.each_line{|line| 
+        break if line =~ /^--content\n$/
+        arr << line.chop
+      }
+      f.close
+      arr
     end
 
     def text_to_h(path)
-      ary = reader(path)
-      to_h(ary, path) if ary
+      ary = reader_v(path)
+      to_h(ary) if ary
     end
 
-    def to_h(ary, path)
-      return nil unless mark_content(ary)
+    def to_h(ary)
+      return nil unless ary
       h, k = Hash.new, ""
-      ary[0..@mark].each_with_index{|x,y|
+      ary.each_with_index{|x,y|
         k = x.gsub("--",'').strip.to_sym if x =~ /^--/
         h[k] = x.strip unless x =~ /^--/
       }
-      #h[:edited] = File.mtime(path)
       return h
     end
 
-    def text_find_w(path, w)
-      ary = reader(path)
-      str = ary.select{|x| not x=~/^--/}.join()
-      return to_h(ary, path) if w.match(str)
+    def find_v(path)
+      h = to_h(reader_v(path))
+      unless @plus
+        return h if @word.match(h.values.to_s)
+      else
+        return nil if h[:control].nil?
+        return h if not h[:control] == "yes"
+      end
     end
-  
+ 
+    def find_t(path)
+      m = open(path){|f| f.grep(@word)}
+      to_h(reader_v(path)) unless m.empty?
+    end
+ 
   end
 
   # end of moudle
