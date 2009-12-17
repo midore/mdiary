@@ -29,7 +29,7 @@ $ ./mdiary-run.rb -d 2009-12 -st 'my'
 [Select plus mark]
 $ ./mdiary-run.rb -d 2009-12 -s +
 
-[Ailas]
+[Alias]
 $ vi .bashrc
 # add 
  alias 'memo'='/path/to/mdiary/bin/mdiary-run.rb'
