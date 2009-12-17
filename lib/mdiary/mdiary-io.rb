@@ -12,50 +12,55 @@ module Mdiary
   module Reader
 
     def reader(path)
-      return nil unless FileTest.exist?(path)
+      return nil unless File.exist?(path)
       IO.readlines(path)
     end
 
-    def reader_v(path)
-      return nil unless FileTest.exist?(path)
-      arr = []
-      f = File.open(path)
-      f.each_line{|line| 
-        break if line =~ /^--content\n$/
-        arr << line.chop
+    def view_h(path)
+      a, mark = [], /^--content$/
+      IO.foreach(path){|line|
+        break if line.match(mark)
+        a.push(line) 
       }
-      f.close
-      arr
+      return ary_to_h(a)
     end
 
-    def text_to_h(path)
-      ary = reader_v(path)
-      to_h(ary) if ary
+    def search_plus(path)
+      h = view_h(path)
+      return h unless h[:control] == 'yes'
     end
 
-    def to_h(ary)
-      return nil unless ary
-      h, k = Hash.new, ""
-      ary.each_with_index{|x,y|
-        k = x.gsub("--",'').strip.to_sym if x =~ /^--/
-        h[k] = x.strip unless x =~ /^--/
+    def search_h(path)
+      return find_index(path) unless @st
+      return find_content(path)
+    end
+
+    def find_index(path)
+      h = view_h(path)
+      m = h.values.select{|v| v.match(@word)}
+      return h unless m.empty?
+    end
+
+    def find_content(path)
+      a, mark = [], /^--content$/
+      i, m = nil, false
+      IO.foreach(path){|line|
+        i = true if line.match(mark)
+        m = true if line.match(@word)
+        a.push(line) unless i
+        break if i and m
+      }
+      return ary_to_h(a) if m
+    end
+
+    def ary_to_h(ary)
+      h, k = Hash.new, nil
+      ary.each{|x|
+        hit = x.match(/--(.*)\n$/)
+        k = hit[1].to_sym if hit
+        h[k] = x.strip unless hit
       }
       return h
-    end
-
-    def find_v(path)
-      h = to_h(reader_v(path))
-      unless @plus
-        return h if @word.match(h.values.to_s)
-      else
-        return nil if h[:control].nil?
-        return h if not h[:control] == "yes"
-      end
-    end
- 
-    def find_t(path)
-      m = open(path){|f| f.grep(@word)}
-      to_h(reader_v(path)) unless m.empty?
     end
  
   end

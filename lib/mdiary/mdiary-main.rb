@@ -19,7 +19,7 @@ module Mdiary
 
     def to_s
       ary = [posted?, created_s, @title, @category]
-      printf "\s\s[%s]\s[%-16s]\s[%s]\s(%s)\n" % ary
+      printf "\t[%s]\s[%-16s]\s[%s]\s(%s)\n" % ary
     end
 
     def detail
@@ -42,7 +42,6 @@ module Mdiary
     end
 
     private
-
     def created_s
       @created.strftime("%Y/%m/%d %a %p %H:%M:%S")
     end
@@ -106,7 +105,6 @@ module Mdiary
     end
 
     private
-
     def command(arg)
       x, a, b, c = arg
       case x
@@ -121,8 +119,8 @@ module Mdiary
         ChoiceDir.new().base_view(a)
       when '-d'
         ChoiceDir.new(a).base_view(c) if b == '-l'
-        request_search(a, b ,c) if b =~ /\-s$|\-st$/
-      when /\-s$|\-st$/
+        request_search(a, b ,c) if b =~ /^\-s$|^\-st$/
+      when /^\-s$|^\-st$/
         request_search(nil, x, a)
       when '-today'
         w = Time.now.strftime("%Y/%m/%d")
@@ -135,7 +133,7 @@ module Mdiary
     end
 
     def exist?(dir)
-      FileTest.exist?(dir)
+      File.exist?(dir)
     end
 
     def check_conf
@@ -195,7 +193,6 @@ module Mdiary
     end
 
     private
-
     def set_i_t(t)
       return @t = Time.now unless t
       begin
@@ -240,30 +237,30 @@ module Mdiary
       return nil unless @word
       if @now_dir
         Search.new(@word, @now_dir, st).base
-      elsif @now_dir_a
-        Search.new(@word, @now_dir_a, st).base_a
+      #elsif @now_dir_a
+        #Search.new(@word, @now_dir_a, st).base_a
       end
     end
  
     private
-
     def set_i_num(n)
       @num = default_n unless n
-      @num = n.to_i if n
+      @num = n.to_i if n 
     end
 
     def set_i_w(w)
       w = '\+' if w == '+'
       begin
-        @word = Regexp.new(w,true)
+        @word = Regexp.new(w, true)
       rescue
       end
     end
 
     def set_i_dir
-      err_str = "none of diary at current month. run add diary\n"
+      err_str = "none of file in current month. \n"
       case @dir
       when nil
+        # nowdir ( methods of Main class ) need to @t. 
         @t = Time.now
         return print err_str unless exist?(nowdir)
         @now_dir = nowdir
@@ -300,42 +297,36 @@ module Mdiary
     end
 
     def base
-      return nil unless @num
-      load_obj(@dir)
+      return nil unless @num > 0
+      set_i_ary(@dir)
       view
     end
 
     def base_a
-      @dir.each{|d| load_obj(d)} 
+      @dir.each{|d| set_i_ary(d)} 
       view
     end
 
     private
-
-    def load_obj(d)
-      @num = 60 unless @num
+    def set_i_ary(d)
+      @num = 20 unless @num
       Find.find(d){|x| 
-        break if @ary.size > @num - 1
+        break if @ary.size == @num
         next unless File.extname(x) == '.txt'
-        next unless diary = obj_diary(x)
-        @ary << diary
+        diary = get_diary(x)
+        @ary << diary if diary
       }
     end
 
-    def obj_diary(x)
-      begin
-        h = text_to_h(x)
-        to_obj(h,x)
-      rescue
-        print "Error: Load file =>#{x}\n\n"
-        return nil
-      end
+    def get_diary(x)
+      h = view_h(x)
+      h[:path] = x
+      to_obj(h) unless h.empty?
     end
 
-    def to_obj(h, x)
+    def to_obj(h)
       title = h[:title]
       t = Time.parse(h[:date])
-      h[:path] = x
       Diary.new(title, t).load_up(h)
     end
 
@@ -360,23 +351,22 @@ module Mdiary
 
     def base
       @plus = 'plus' if @word == /\+/i
-      load_obj(@dir)
+      set_i_ary(@dir)
       view
     end
 
-    def base_a
-      @dir.each{|d| load_obj(d)}
-      view
-    end
+    #def base_a
+    #  @dir.each{|d| set_i_ary(d)}
+    #  view
+    #end
 
     private
-
-    def obj_diary(x)
-      begin
-        (@st.nil?) ? h = find_v(x) : h = find_t(x)
-        to_obj(h, x) if h
-      rescue
-        return nil
+    def get_diary(x)
+      h = search_h(x) unless @plus
+      h = search_plus(x) if @plus
+      unless h.nil?
+        h[:path] = x
+        to_obj(h)
       end
     end
  
@@ -403,7 +393,6 @@ module Mdiary
     end
 
     private
-
     def run_req
       clean_ary
       case @req
@@ -455,7 +444,6 @@ module Mdiary
     end
 
     private
-
     def receive_gets(str, opt)
       return false unless $stdin.tty?
       print "#{str}:\n"
@@ -476,7 +464,7 @@ module Mdiary
         return false if i_ans > opt
         return false if ans =~ /\D/
         return false unless ans
-        return ans.to_i
+        return i_ans
       end
     end
 
