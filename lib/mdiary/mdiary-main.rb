@@ -360,13 +360,13 @@ module Mdiary
 
     def base
       @plus = 'plus' if @word == /\+/i
+      return nil unless @st.nil? || @plus.nil?
       set_i_ary(@dir)
       view
     end
 
     private
     def get_diary(x)
-      return nil unless @st.nil? || @plus.nil?
       begin
         h = find_index(x) unless @st
         h = find_content(x) unless @st.nil?
