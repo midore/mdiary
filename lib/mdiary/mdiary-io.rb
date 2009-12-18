@@ -36,12 +36,13 @@ module Mdiary
     end
 
     def find_content(path)
-      i, m = false, false
+      i, m = nil, nil
       a, mark = [], /^--content$/
       IO.foreach(path){|line|
-        i = true if line.match(mark)
-        m = true if line.match(@word)
-        a.push(line) unless i
+        if line.match(mark)
+          i = true; next
+        end
+        (i.nil?) ? a.push(line) : m = line.match(@word)
         break if m
       }
       return ary_to_h(a, path) if m
