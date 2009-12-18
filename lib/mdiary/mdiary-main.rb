@@ -201,6 +201,7 @@ module Mdiary
     end
 
     def make_diary
+      path = set_path
       text = Diary.new(@title, @t).draft
       writer(path, text)
       text_open(path)
