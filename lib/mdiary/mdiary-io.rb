@@ -27,9 +27,12 @@ module Mdiary
 
     def find_index(path)
       h = view_h(path)
-      return h unless h[:control] == 'yes' if @plus
-      m = h.values.select{|v| v.match(@word)}
-      return h unless m.empty?
+      unless @plus
+        m = h.values.select{|v| v.match(@word)}
+        return h unless m.empty?
+      else
+        return h unless h[:control] == 'yes'
+      end
     end
 
     def find_content(path)

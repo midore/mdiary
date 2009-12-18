@@ -184,15 +184,28 @@ module Mdiary
     end
 
     def base
-      return nil unless @t
-      return nil unless @now_dir
-      return nil unless path = set_path
-      text = Diary.new(@title, @t).draft
-      writer(path, text)
-      text_open(path)
+      return nil unless check
+      make_diary
+    end
+
+    def get_path 
+      return nil unless check
+      set_path
     end
 
     private
+    def check
+      return nil unless @t
+      return nil unless @now_dir
+      set_path
+    end
+
+    def make_diary
+      text = Diary.new(@title, @t).draft
+      writer(path, text)
+      text_open(path)
+    end 
+
     def set_i_t(t)
       return @t = Time.now unless t
       begin
