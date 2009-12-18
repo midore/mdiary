@@ -366,10 +366,13 @@ module Mdiary
 
     private
     def get_diary(x)
+      return nil unless @st.nil? || @plus.nil?
       begin
         h = find_index(x) unless @st
         h = find_content(x) unless @st.nil?
         to_obj(h) unless h.nil?
+      rescue
+        return nil
       end
     end
  
