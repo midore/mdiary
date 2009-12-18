@@ -235,11 +235,7 @@ module Mdiary
     def base_search(w, st=nil)
       set_i_w(w)
       return nil unless @word
-      if @now_dir
-        Search.new(@word, @now_dir, st).base
-      #elsif @now_dir_a
-        #Search.new(@word, @now_dir_a, st).base_a
-      end
+      Search.new(@word, @now_dir, st).base if @now_dir
     end
  
     private
@@ -355,18 +351,12 @@ module Mdiary
       view
     end
 
-    #def base_a
-    #  @dir.each{|d| set_i_ary(d)}
-    #  view
-    #end
-
     private
     def get_diary(x)
-      h = search_h(x) unless @plus
-      h = search_plus(x) if @plus
-      unless h.nil?
-        h[:path] = x
-        to_obj(h)
+      begin
+        h = find_index(x) unless @st
+        h = find_content(x) unless @st.nil?
+        to_obj(h) unless h.nil?
       end
     end
  
