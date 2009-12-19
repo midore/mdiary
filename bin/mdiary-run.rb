@@ -15,7 +15,7 @@ ext = Encoding.default_external.name
 err = nil
 err = true unless ext == 'UTF-8'
 err = true if ARGV.size > 4
-ARGV.each{|v| err = true if v.size > 11}
+ARGV.each{|v| err = true if v.size > 20}
 abort if err
 
 load 'mdconfig', wrap=true
