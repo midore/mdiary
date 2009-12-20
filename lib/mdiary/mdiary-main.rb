@@ -188,7 +188,7 @@ module Mdiary
       make_diary
     end
 
-    def get_path 
+    def get_path
       return nil unless check
       set_path
     end
@@ -197,7 +197,7 @@ module Mdiary
     def check
       return nil unless @t
       return nil unless @now_dir
-      set_path
+      return true
     end
 
     def make_diary
