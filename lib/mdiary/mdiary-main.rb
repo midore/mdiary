@@ -35,8 +35,8 @@ module Mdiary
     def to_txt(a)
       str = String.new.encode("UTF-8")
       a.each{|i|
-        k = i.to_s.gsub("@","--")
-        str << "#{k}\n#{get_ins(i).to_s}\n"
+        m = i.to_s.match(/@(.*)/)
+        str << "--#{m[1]}\n#{get_ins(i).to_s}\n" if m
       }
       return str
     end
@@ -95,7 +95,7 @@ module Mdiary
 
     def text_remove(path)
       return nil unless exist?(path)
-       new = File.join(trash_dir, File.basename(path))
+      new = File.join(trash_dir, File.basename(path))
       begin
         File.rename(path, new)
         print "Saved: #{new}\n"
@@ -165,8 +165,8 @@ module Mdiary
 
     def clean_ins
       @dir, @now_dir = nil, nil
-      print "...bye.\n"
       sleep 1
+      print "...bye.\n"
     end
 
   end
@@ -195,13 +195,22 @@ module Mdiary
 
     private
     def check
+      err = "too many files. Edit bin/mdconfig.\n"
       return nil unless @t
       return nil unless @now_dir
+      return print err if max?
       return true
     end
 
+    def max?
+      max = default_file_count if defined? default_file_count
+      max = 90 unless max
+      return true unless max
+      Dir.entries(@now_dir).select{|x| /\.txt$/.match(x)}.size > max
+    end
+
     def make_diary
-      path = set_path
+      return nil unless path = set_path
       text = Diary.new(@title, @t).draft
       writer(path, text)
       text_open(path)
@@ -226,6 +235,7 @@ module Mdiary
 
     def set_path
       f = File.join(@now_dir, @t.strftime("%Y-%m-%dT%H-%M-%S.txt"))
+      print "Same name file is exist.\n" if exist?(f)
       return f unless exist?(f)
     end
 
@@ -319,7 +329,6 @@ module Mdiary
 
     private
     def set_i_ary(d)
-      @num = 20 unless @num
       Find.find(d){|x| 
         break if @ary.size == @num
         next unless File.extname(x) == '.txt'
@@ -329,15 +338,17 @@ module Mdiary
     end
 
     def get_diary(x)
-      h = view_h(x)
-      h[:path] = x
-      to_obj(h) unless h.empty?
+      begin
+        h = view_h(x)
+        to_obj(h) unless h.empty?
+      rescue
+        return nil
+      end
     end
 
     def to_obj(h)
-      title = h[:title]
       t = Time.parse(h[:date])
-      Diary.new(title, t).load_up(h)
+      Diary.new(nil, t).load_up(h)
     end
 
     def view
@@ -360,6 +371,9 @@ module Mdiary
     end
 
     def base
+      err = "can't search. too many files\n"
+      max = Dir.entries(@dir).select{|x| /\.txt$/.match(x)}.size
+      return print err if max > 90
       @plus = 'plus' if @word == /\+/i
       return nil unless @st.nil? || @plus.nil?
       set_i_ary(@dir)
@@ -395,24 +409,19 @@ module Mdiary
         @diary = @ary[n-1] if n
       end
       return clean_ary if @diary.nil?
-      @req = select_req
-      run_req 
+      req = select_req
+      run_req(req) 
     end
 
     private
-    def run_req
+    def run_req(req)
       clean_ary
-      case @req
+      case req
       when false then return nil
       when 'i' then @diary.detail
       when 'r' then Main.new().text_remove(@diary.path)
       when 'e' then Main.new().text_open(@diary.path)
       end
-    end
-
-    def select_xreq
-      str = 'Select [doc/post/up/del/n]'
-      Select.new.base(str, false)
     end
 
     def select_no
@@ -424,9 +433,13 @@ module Mdiary
       Select.new.base(str, false)
     end
 
+    def select_xreq
+      str = 'Select [doc/post/up/del/n]'
+      Select.new.base(str, false)
+    end
+
     def clean_ary
       self.instance_variables.each{|i|
-        next if i == :@req
         next if i == :@diary
         self.instance_variable_set(i, nil)
       }
