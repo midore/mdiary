@@ -8,6 +8,9 @@ module Mdiary
     def default_title
       'New Title'
     end
+    def default_file_count
+      90
+    end
     def data_dir
       'path/to/yourdir'
     end
