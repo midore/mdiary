@@ -375,7 +375,7 @@ module Mdiary
       max = Dir.entries(@dir).select{|x| /\.txt$/.match(x)}.size
       return print err if max > 90
       @plus = 'plus' if @word == /\+/i
-      return nil unless @st.nil? || @plus.nil?
+      return nil if @st && @plus
       set_i_ary(@dir)
       view
     end
