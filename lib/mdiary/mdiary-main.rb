@@ -247,7 +247,7 @@ module Mdiary
 
     def initialize(d=nil)
       @dir= d
-      set_i_dir
+      set_i_nowdir
     end
 
     def base_view(n)
@@ -257,6 +257,7 @@ module Mdiary
     end
 
     def base_search(w, st=nil)
+      return nil if w.nil? || w.empty?
       set_i_w(w)
       return nil unless @word
       Search.new(@word, @now_dir, st).base if @now_dir
@@ -276,7 +277,7 @@ module Mdiary
       end
     end
 
-    def set_i_dir
+    def set_i_nowdir
       err_str = "none of file in current month. \n"
       case @dir
       when nil
