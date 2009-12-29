@@ -11,7 +11,7 @@ module Mdiary
     end
 
     attr_reader :path
-    
+
     def load_up(h)
       h.each{|k,v| set_ins("@#{k}".to_sym, v)}
       return self
@@ -100,7 +100,7 @@ module Mdiary
         File.rename(path, new)
         print "Saved: #{new}\n"
       rescue
-        print "Error: trash directory\n"
+        return print "Error: trash directory\n"
       end
     end
 
@@ -119,9 +119,9 @@ module Mdiary
         ChoiceDir.new().base_view(a)
       when '-d'
         ChoiceDir.new(a).base_view(c) if b == '-l'
-        request_search(a, b ,c) if b =~ /^\-s$|^\-st$/
+        request_search(a, b ,c) if c && b =~ /^\-s$|^\-st$/ && b
       when /^\-s$|^\-st$/
-        request_search(nil, x, a)
+        request_search(nil, x, a) if a
       when '-today'
         w = Time.now.strftime("%Y/%m/%d")
         ChoiceDir.new().base_search(w)
@@ -129,6 +129,7 @@ module Mdiary
     end
 
     def request_search(d, st, w)
+      return nil if w.empty?
       ChoiceDir.new(d).base_search(w, st)
     end
 
@@ -141,11 +142,22 @@ module Mdiary
       a, b = true, true
       a = make_dir(trash_dir) unless exist?(trash_dir)
       b = make_dir(text_dir) unless exist?(text_dir)
+      check_dir_chmod(text_dir)
+      check_dir_chmod(trash_dir)
       return true if a and b
     end
 
-    def error_conf
-      print "Error: Directory.\n=> Need edit config file.(bin/mdconfig)\n"
+    def check_dir_chmod(d)
+      e = []
+      e.push(File.readable?(d))
+      e.push(File.writable?(d))
+      e.push(File.executable?(d))
+      error_conf(d) if e.include?(false)
+    end
+
+    def error_conf(d=nil)
+      print "=> Error: Directory. Need edit config file.(bin/mdconfig)\n" unless d
+      print "=> Please: $ chmod +x #{d}\n" if d
     end
 
     def nowdir
@@ -157,7 +169,7 @@ module Mdiary
         Dir.mkdir(path)
         print "maked directory: #{path}\n"
       rescue
-        print "Error: make directory \"#{path}\"\n"
+        print "Error: make directory.\"#{path}\"\n"
         return false
       end
       return true
@@ -220,7 +232,7 @@ module Mdiary
       return @t = Time.now unless t
       begin
         pt = Time.parse(t)
-      rescue
+      rescue ArgumentError
         return false
       end
       @t = pt
@@ -257,7 +269,6 @@ module Mdiary
     end
 
     def base_search(w, st=nil)
-      return nil if w.nil? || w.empty?
       set_i_w(w)
       return nil unless @word
       Search.new(@word, @now_dir, st).base if @now_dir
@@ -270,10 +281,12 @@ module Mdiary
     end
 
     def set_i_w(w)
-      w = '\+' if w == '+'
+      return @word = /\+/i if w == '+'
+      return print "Error: word > 2\n" if w.size < 3
       begin
         @word = Regexp.new(w, true)
-      rescue
+      rescue RegexpError
+        return nil
       end
     end
 
@@ -468,7 +481,7 @@ module Mdiary
     def receive_gets(str, opt)
       return false unless $stdin.tty?
       print "#{str}:\n"
-      ans = $stdin.gets.chop
+      ans = $stdin.gets.chomp
       return false if /^n$|^no$/.match(ans)
       return false if ans.empty?
       case opt
