@@ -181,6 +181,15 @@ module Mdiary
       print "...bye.\n"
     end
 
+    def max?
+      max = default_file_count if defined? default_file_count
+      max = 90 unless max
+      s = Dir.entries(@now_dir).select{|x| /\.txt$/.match(x)}.size
+      return false if s < max
+      print "too many files. Edit bin/mdconfig.\n"
+      return true
+    end
+
   end
 
   #---------------------- Add
@@ -207,18 +216,10 @@ module Mdiary
 
     private
     def check
-      err = "too many files. Edit bin/mdconfig.\n"
       return nil unless @t
       return nil unless @now_dir
-      return print err if max?
+      return nil if max?
       return true
-    end
-
-    def max?
-      max = default_file_count if defined? default_file_count
-      max = 90 unless max
-      return true unless max
-      Dir.entries(@now_dir).select{|x| /\.txt$/.match(x)}.size > max
     end
 
     def make_diary
@@ -263,12 +264,14 @@ module Mdiary
     end
 
     def base_view(n)
+      return nil if max?
       set_i_num(n)
       View.new(@num, @now_dir).base if @now_dir
       View.new(@num, @now_dir_a).base_a if @now_dir_a
     end
 
     def base_search(w, st=nil)
+      return nil if max?
       set_i_w(w)
       return nil unless @word
       Search.new(@word, @now_dir, st).base if @now_dir
@@ -385,9 +388,6 @@ module Mdiary
     end
 
     def base
-      err = "can't search. too many files\n"
-      max = Dir.entries(@dir).select{|x| /\.txt$/.match(x)}.size
-      return print err if max > 90
       @plus = 'plus' if @word == /\+/i
       return nil if @st && @plus
       set_i_ary(@dir)
