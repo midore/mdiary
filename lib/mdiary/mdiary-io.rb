@@ -1,5 +1,38 @@
 module Mdiary
 
+  module Setting
+
+    include $MDIARYCONF
+
+    def check_conf
+      dir = data_dir
+      days = text_dir
+      trash = trash_dir
+      return errmsg unless File.exist?(dir)
+      return errmsg unless File.exist?(days)
+      return errmsg unless File.exist?(trash)
+      return errmsg(days) unless check_dir(days)
+      return errmsg(trash) unless check_dir(trash)
+      @text_dir, @trash_dir = days, trash
+      return true
+    end
+
+    def check_dir(d)
+      e = []
+      e << File.directory?(d)
+      e << File.readable?(d)
+      e << File.writable?(d)
+      e << File.executable?(d)
+      return true unless e.include?(false)
+    end
+
+    def errmsg(d=nil)
+      print "Please: $ chmod +x #{d}\n" if d
+      print "Error: Directory. Need edit config file.(bin/mdconfig)\n" unless d
+    end
+
+  end
+
   module Writer
 
     def writer(path, data)

@@ -1,4 +1,329 @@
 module Mdiary
+ 
+  #---------------------- Main
+
+  class Main
+
+    include Setting
+    def start(arg)
+      return nil unless check_conf
+      command(arg)
+    end
+
+    private
+    def arg_key(x)
+      a = [:d, :l, :a, :t, :at, :s, :st, :today]
+      m = /\-(.*)/.match(x) if x =~ /^\-/
+      k = m[1].to_sym if m
+      return k if a.find_index(k)
+    end
+
+    def exist?(dir)
+      File.exist?(dir)
+    end
+
+    def command(arg)
+      x, a, y, b = arg
+      h = Hash.new
+      h[arg_key(x)] = a
+      h[arg_key(y)] = b
+      h[arg_key(x)] = Time.now if x == "-today"
+      return nil unless h.keys[0]
+      set_nowdir(h)
+      #------- start
+      return nil unless @now_dir
+      return run_add(h[:a]) if h.has_key?(:a) or h.has_key?(:at)
+      return err_req unless exist?(@now_dir)
+      if h.has_key?(:l)
+        run_view(h[:l])
+      elsif h.has_key?(:s) or h.has_key?(:st)
+        (h[:st].nil?) ? w = h[:s] : w = h[:st]
+        (h[:st].nil?) ? st = nil : st = 'st'
+        run_search(w, st) if w
+      elsif h.has_key?(:today)
+        run_today 
+      end
+    end
+
+    def err_req
+      print "Please: add. none files yet.\n" unless exist?(@now_dir)
+    end
+
+    def run_request(a)
+      return nil if a.empty?
+      a.each_with_index{|x,y| print y + 1; x.to_s}
+      Request.new(a, @trash_dir).base
+    end
+
+    def run_view(n)
+      num = n.to_i if /\d/.match(n)
+      num ||= default_n
+      a = View.new(num, @now_dir).base
+      run_request(a)
+    end
+
+    def run_search(w, st)
+      a = Search.new(w, @now_dir, st).base
+      run_request(a)
+    end
+
+    def run_today
+      w = Time.now.strftime("%Y/%m/%d")
+      run_search(w, nil)
+    end
+
+    def run_add(title)
+      return nil if exist?(@now_dir) and max?
+      make_dir(@now_dir) unless exist?(@now_dir)
+      title ||= default_title
+      Add.new(title, @t).base(@now_dir)
+    end
+
+    def i_t(t)
+      return @t = Time.now if t.nil?
+      return false unless /\d{4}/.match(t)
+      begin
+        @t = Time.parse(t)
+      rescue ArgumentError
+        return false
+      end
+      return true
+    end
+
+    def i_dir(t)
+      return nil unless i_t(t)
+      @now_dir = File.join(@text_dir, @t.strftime("%Y-%m")) if @t
+    end
+
+    def i_xdir(str)
+      if /^\d{4}\-\d{2}$/.match(str)
+        d = File.join(@text_dir, str)
+        return nil unless exist?(d)
+        return @now_dir = d
+      else
+        print "Error: example, 2009-12\n"
+      end
+    end
+
+    def set_nowdir(h)
+      return i_xdir(h[:d]) unless h[:d].nil?
+      if h.has_key?(:t)
+        i_dir(h[:t])
+      elsif h.has_key?(:at)
+        i_dir(h[:at])
+      else
+        i_dir(nil)
+      end
+    end
+
+    def make_dir(path)
+      # Add
+      begin
+        Dir.mkdir(path)
+        print "maked directory: #{path}\n"
+      rescue
+        print "Error: make directory.\"#{path}\"\n"
+        return false
+      end
+      return true if exist?(path)
+    end
+
+    def max?
+      # Add
+      return nil unless exist?(@now_dir)
+      max = default_file_count if defined? default_file_count
+      max = 90 unless max
+      p s = Dir.entries(@now_dir).select{|x| /\.txt$/.match(x)}.size
+      return false if s < max
+      print "too many files. Edit bin/mdconfig.\n"
+      return true
+    end
+
+  end
+
+  #---------------------- Add
+
+  class Add
+
+    include Writer
+
+    def initialize(title=nil, t)
+      @title = title
+      @t = t
+    end
+
+    def base(d)
+      @now_dir = d
+      make_diary
+    end
+
+    private
+    def set_path
+      f = File.join(@now_dir, @t.strftime("%Y-%m-%dT%H-%M-%S.txt"))
+      return print "Same name file is exist.\n" if File.exist?(f)
+      return f
+    end
+
+    def make_diary
+      return nil unless path = set_path
+      text = Diary.new(@title, @t).draft
+      @t, @now_dir, @title = nil, nil, nil
+      sleep 1
+      writer(path, text)
+      Request.new().text_open(path)
+    end
+
+  end
+
+  #---------------------- View
+
+  class View
+
+    include Reader
+
+    def initialize(num=nil, dir)
+      @num = num
+      @dir = dir
+      @ary = Array.new
+    end
+
+    def base
+      return print "Error: default_n\n" if @num < 1
+      set_i_ary(@dir)
+    end
+
+    private
+    def set_i_ary(d)
+      Find.find(d){|x| 
+        break if @ary.size == @num
+        next unless File.extname(x) == '.txt'
+        diary = get_diary(x)
+        @ary << diary if diary
+      }
+      return @ary
+    end
+
+    def get_diary(x)
+      begin
+        h = view_h(x)
+        to_obj(h) unless h.empty?
+      rescue
+        return nil
+      end
+    end
+
+    def to_obj(h)
+      t = Time.parse(h[:date])
+      Diary.new(nil, t).load_up(h)
+    end
+
+  end
+
+  #---------------------- Search
+
+  class Search < View
+
+    def initialize(word, dir, st=nil)
+      @w = word
+      @dir = dir
+      @ary = Array.new
+      @st = st if st == 'st'
+    end
+
+    def base
+      return nil unless set_i_w
+      @plus = 'plus' if @word == /\+/i
+      return nil if @st && @plus
+      set_i_ary(@dir)
+    end
+
+    private
+    def set_i_w
+      return @word = /\+/i if @w == '+'
+      return print "Error: word > 2\n" if @w.size < 3
+      begin
+        @word = Regexp.new(@w, true)
+      rescue RegexpError
+        @word = nil
+      end
+    end
+
+    def get_diary(x)
+      begin
+        h = find_index(x) unless @st
+        h = find_content(x) unless @st.nil?
+        to_obj(h) unless h.nil?
+      rescue
+        return nil
+      end
+    end
+ 
+  end
+
+  #--------------------- Request
+
+  class Request
+
+    def initialize(ary=nil, trash=nil)
+      @ary = ary
+      @num = ary.size if ary
+      @trash = trash
+    end
+
+    def base
+      @diary = @ary[0] if @num == 1
+      unless @diary
+        n = select_no
+        @diary = @ary[n-1] if n
+      end
+      return clean_ary if @diary.nil?
+      req = select_req
+      run_req(req) 
+    end
+
+    def text_open(path)
+      return false unless File.exist?(path)
+      exec "vim #{path}"
+    end
+
+    private
+    def run_req(req)
+      @ary, @num = nil, nil
+      case req
+      when false then return nil
+      when 'i' then @diary.detail
+      when 'r' then text_remove(@diary.path)
+      when 'e' then text_open(@diary.path)
+      end
+    end
+
+    def text_remove(path)
+      return nil unless File.exist?(path)
+      new = File.join(@trash, File.basename(path))
+      begin
+        File.rename(path, new)
+        print "Removed: #{new}\n"
+      rescue
+        return print "Error: trash directory\n"
+      end
+    end
+
+    def select_no
+      Select.new.base("Select NO", @num) 
+    end
+
+    def select_req
+      str = "Select [i/e/r]"
+      Select.new.base(str, false)
+    end
+
+    def clean_ary
+      @ary, @num = nil, nil
+    end
+
+  end
+
+  #---------------------------- RequestSelect
 
   class Diary
 
@@ -72,394 +397,6 @@ module Mdiary
 
   end
  
-  #---------------------- Main
-
-  class Main
-
-    include $MDIARYCONF
-
-    def initialize
-      @start = check_conf
-    end
-
-    def start(arg)
-      return error_conf unless @start
-      command(arg)
-    end
-
-    def text_open(path)
-      return false unless exist?(path)
-      clean_ins
-      exec "vim #{path}"
-    end
-
-    def text_remove(path)
-      return nil unless exist?(path)
-      new = File.join(trash_dir, File.basename(path))
-      begin
-        File.rename(path, new)
-        print "Saved: #{new}\n"
-      rescue
-        return print "Error: trash directory\n"
-      end
-    end
-
-    private
-    def command(arg)
-      x, a, b, c = arg
-      case x
-      when '-a'
-        tit = default_title unless a
-        tit = a if a
-        Add.new(tit, nil).base unless b
-        Add.new(tit, c).base if b == '-t'
-      when '-at'
-        Add.new(default_title, a).base if a
-      when '-l'
-        ChoiceDir.new().base_view(a)
-      when '-d'
-        ChoiceDir.new(a).base_view(c) if b == '-l'
-        request_search(a, b ,c) if c && b =~ /^\-s$|^\-st$/ && b
-      when /^\-s$|^\-st$/
-        request_search(nil, x, a) if a
-      when '-today'
-        w = Time.now.strftime("%Y/%m/%d")
-        ChoiceDir.new().base_search(w)
-      end
-    end
-
-    def request_search(d, st, w)
-      return nil if w.empty?
-      ChoiceDir.new(d).base_search(w, st)
-    end
-
-    def exist?(dir)
-      File.exist?(dir)
-    end
-
-    def check_conf
-      return false unless exist?(data_dir)
-      a, b = true, true
-      a = make_dir(trash_dir) unless exist?(trash_dir)
-      b = make_dir(text_dir) unless exist?(text_dir)
-      check_dir_chmod(text_dir)
-      check_dir_chmod(trash_dir)
-      return true if a and b
-    end
-
-    def check_dir_chmod(d)
-      e = []
-      e.push(File.readable?(d))
-      e.push(File.writable?(d))
-      e.push(File.executable?(d))
-      error_conf(d) if e.include?(false)
-    end
-
-    def error_conf(d=nil)
-      print "=> Error: Directory. Need edit config file.(bin/mdconfig)\n" unless d
-      print "=> Please: $ chmod +x #{d}\n" if d
-    end
-
-    def nowdir
-      File.join(text_dir, @t.strftime("%Y-%m"))
-    end
-
-    def make_dir(path)
-      begin
-        Dir.mkdir(path)
-        print "maked directory: #{path}\n"
-      rescue
-        print "Error: make directory.\"#{path}\"\n"
-        return false
-      end
-      return true
-    end
-
-    def clean_ins
-      @dir, @now_dir = nil, nil
-      sleep 1
-      print "...bye.\n"
-    end
-
-    def max?
-      max = default_file_count if defined? default_file_count
-      max = 90 unless max
-      s = Dir.entries(@now_dir).select{|x| /\.txt$/.match(x)}.size
-      return false if s < max
-      print "too many files. Edit bin/mdconfig.\n"
-      return true
-    end
-
-  end
-
-  #---------------------- Add
-
-  class Add < Main
-
-    include Writer
-
-    def initialize(title=nil, t)
-      @title = title
-      set_i_t(t)
-      set_i_nowdir
-    end
-
-    def base
-      return nil unless check
-      make_diary
-    end
-
-    def get_path
-      return nil unless check
-      set_path
-    end
-
-    private
-    def check
-      return nil unless @t
-      return nil unless @now_dir
-      return nil if max?
-      return true
-    end
-
-    def make_diary
-      return nil unless path = set_path
-      text = Diary.new(@title, @t).draft
-      writer(path, text)
-      text_open(path)
-    end 
-
-    def set_i_t(t)
-      return @t = Time.now unless t
-      begin
-        pt = Time.parse(t)
-      rescue ArgumentError
-        return false
-      end
-      @t = pt
-    end
-
-    def set_i_nowdir
-      return false unless @t
-      d = nowdir
-      return false unless make_dir(d) unless exist?(d)
-      @now_dir = d
-    end
-
-    def set_path
-      f = File.join(@now_dir, @t.strftime("%Y-%m-%dT%H-%M-%S.txt"))
-      print "Same name file is exist.\n" if exist?(f)
-      return f unless exist?(f)
-    end
-
-  end
-
-  #---------------------- ChoiceDir
-
-  class ChoiceDir < Main
-
-    def initialize(d=nil)
-      @dir= d
-      set_i_nowdir
-    end
-
-    def base_view(n)
-      return nil if max?
-      set_i_num(n)
-      View.new(@num, @now_dir).base if @now_dir
-      View.new(@num, @now_dir_a).base_a if @now_dir_a
-    end
-
-    def base_search(w, st=nil)
-      return nil if max?
-      set_i_w(w)
-      return nil unless @word
-      Search.new(@word, @now_dir, st).base if @now_dir
-    end
- 
-    private
-    def set_i_num(n)
-      @num = default_n unless n
-      @num = n.to_i if n 
-    end
-
-    def set_i_w(w)
-      return @word = /\+/i if w == '+'
-      return print "Error: word > 2\n" if w.size < 3
-      begin
-        @word = Regexp.new(w, true)
-      rescue RegexpError
-        return nil
-      end
-    end
-
-    def set_i_nowdir
-      err_str = "none of file in current month. \n"
-      case @dir
-      when nil
-        # nowdir ( methods of Main class ) need to @t. 
-        @t = Time.now
-        return print err_str unless exist?(nowdir)
-        @now_dir = nowdir
-      when /^\d{4}-\d{2}$/
-        d = File.join(text_dir, @dir)
-        @now_dir = d if exist?(d)
-      when /^2\d{3}$/
-        @now_dir_a = get_dir
-      end
-    end
-
-    def get_dir
-      a = []
-      Find.find(text_dir){|x|
-        next unless File.directory?(x)
-        next unless File.basename(x).include?(@dir)
-        a << x
-      }
-      return a unless a.empty?
-    end
-
-  end
-
-  #---------------------- View
-
-  class View
-
-    include Reader
-
-    def initialize(num=nil, dir)
-      @num = num
-      @dir = dir
-      @ary = Array.new
-    end
-
-    def base
-      return nil unless @num > 0
-      set_i_ary(@dir)
-      view
-    end
-
-    def base_a
-      @dir.each{|d| set_i_ary(d)} 
-      view
-    end
-
-    private
-    def set_i_ary(d)
-      Find.find(d){|x| 
-        break if @ary.size == @num
-        next unless File.extname(x) == '.txt'
-        diary = get_diary(x)
-        @ary << diary if diary
-      }
-    end
-
-    def get_diary(x)
-      begin
-        h = view_h(x)
-        to_obj(h) unless h.empty?
-      rescue
-        return nil
-      end
-    end
-
-    def to_obj(h)
-      t = Time.parse(h[:date])
-      Diary.new(nil, t).load_up(h)
-    end
-
-    def view
-      return nil if @ary.empty?
-      @ary.each_with_index{|x,y| print y + 1; x.to_s}
-      Request.new(@ary).base 
-    end
-
-  end
-
-  #---------------------- Search
-
-  class Search < View
-
-    def initialize(word, dir, st=nil)
-      @word = word
-      @dir = dir
-      @ary = Array.new
-      @st = st if st == '-st'
-    end
-
-    def base
-      @plus = 'plus' if @word == /\+/i
-      return nil if @st && @plus
-      set_i_ary(@dir)
-      view
-    end
-
-    private
-    def get_diary(x)
-      begin
-        h = find_index(x) unless @st
-        h = find_content(x) unless @st.nil?
-        to_obj(h) unless h.nil?
-      rescue
-        return nil
-      end
-    end
- 
-  end
-
-  #--------------------- Request
-
-  class Request
-
-    def initialize(ary)
-      @ary = ary
-      @num = ary.size
-    end
-
-    def base
-      @diary = @ary[0] if @ary.size == 1
-      unless @diary
-        n = select_no
-        @diary = @ary[n-1] if n
-      end
-      return clean_ary if @diary.nil?
-      req = select_req
-      run_req(req) 
-    end
-
-    private
-    def run_req(req)
-      clean_ary
-      case req
-      when false then return nil
-      when 'i' then @diary.detail
-      when 'r' then Main.new().text_remove(@diary.path)
-      when 'e' then Main.new().text_open(@diary.path)
-      end
-    end
-
-    def select_no
-      Select.new.base("Select NO", @num) 
-    end
-
-    def select_req
-      str = "Select [i/e/r]"
-      Select.new.base(str, false)
-    end
-
-    def select_xreq
-      str = 'Select [doc/post/up/del/n]'
-      Select.new.base(str, false)
-    end
-
-    def clean_ary
-      self.instance_variables.each{|i|
-        next if i == :@diary
-        self.instance_variable_set(i, nil)
-      }
-    end
-
-  end
 
   #---------------------------- RequestSelect
 
@@ -506,4 +443,3 @@ module Mdiary
 
   # end of module
 end
-
