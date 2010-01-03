@@ -15,10 +15,10 @@ module Mdiary
       'path/to/yourdir'
     end
     def text_dir
-      File.join(data_dir, 'days')
+      'path/to/yourdir/days'
     end
     def trash_dir
-      File.join(data_dir, 'trash')
+      'path/to/yourdir/trash'
     end
 
   end
