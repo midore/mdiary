@@ -59,12 +59,12 @@ module Mdiary
       num = n.to_i if /\d/.match(n)
       num ||= default_n
       a = View.new(num, @now_dir).base
-      run_request(a)
+      run_request(a) if a
     end
 
     def run_search(w, st)
       a = Search.new(w, @now_dir, st).base
-      run_request(a)
+      run_request(a) if a
     end
 
     def run_today
