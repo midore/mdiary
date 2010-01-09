@@ -8,9 +8,7 @@ module Mdiary
       dir = data_dir
       days = text_dir
       trash = trash_dir
-      return errmsg unless File.exist?(dir)
-      return errmsg unless File.exist?(days)
-      return errmsg unless File.exist?(trash)
+      return errmsg(dir) unless check_dir(days)
       return errmsg(days) unless check_dir(days)
       return errmsg(trash) unless check_dir(trash)
       @text_dir, @trash_dir = days, trash
@@ -19,6 +17,7 @@ module Mdiary
 
     def check_dir(d)
       e = []
+      e << File.exist?(d)
       e << File.directory?(d)
       e << File.readable?(d)
       e << File.writable?(d)
@@ -27,7 +26,7 @@ module Mdiary
     end
 
     def errmsg(d=nil)
-      print "Please: $ chmod +x #{d}\n" if d
+      print "Please: $ mkdir #{d} or $ chmod +x #{d}\n" if d
       print "Error: Directory. Need edit config file.(bin/mdconfig)\n" unless d
     end
 
