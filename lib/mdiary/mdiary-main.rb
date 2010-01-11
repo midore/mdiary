@@ -5,48 +5,33 @@ module Mdiary
   class Main
 
     include Setting
-    def start(arg)
+    def start(arg_h)
       return nil unless check_conf
-      command(arg)
+      command(arg_h)
     end
 
     private
-    def arg_key(x)
-      a = [:d, :l, :a, :t, :at, :s, :st, :today]
-      m = /\-(.*)/.match(x) if x =~ /^\-/
-      k = m[1].to_sym if m
-      return k if a.find_index(k)
-    end
-
-    def exist?(dir)
-      File.exist?(dir)
-    end
-
-    def command(arg)
-      x, a, y, b = arg
-      h = Hash.new
-      h[arg_key(x)] = a
-      h[arg_key(y)] = b
-      h[arg_key(x)] = Time.now if x == "-today"
-      return nil unless h.keys[0]
-      set_nowdir(h)
-      #------- start
+    def command(h)
+      set_nowdir(h) # define @now_dir, @t
       return nil unless @now_dir
-      return run_add(h[:a]) if h.has_key?(:a) or h.has_key?(:at)
+      x = h.keys[0]
+      return run_add(h[:a]) if x == :a or x == :at
       return err_req unless exist?(@now_dir)
-      if h.has_key?(:l)
-        run_view(h[:l])
-      elsif h.has_key?(:s) or h.has_key?(:st)
-        (h[:st].nil?) ? w = h[:s] : w = h[:st]
-        (h[:st].nil?) ? st = nil : st = 'st'
-        run_search(w, st) if w
-      elsif h.has_key?(:today)
-        run_today 
+      (x == :d) ? x = h.keys[1] : x = h.keys[0]
+      case x
+      when :l then run_view(h[:l])
+      when :s then run_search(h[:s], nil)
+      when :st then run_search(h[:st], 'st')
+      when :today then run_today
       end
     end
 
     def err_req
-      print "Please: add. none files yet.\n" unless exist?(@now_dir)
+      print "Please: add. none files, yet.\n" unless exist?(@now_dir)
+    end
+
+    def exist?(dir)
+      File.exist?(dir)
     end
 
     def run_request(a)
@@ -63,6 +48,7 @@ module Mdiary
     end
 
     def run_search(w, st)
+      return nil unless w
       a = Search.new(w, @now_dir, st).base
       run_request(a) if a
     end
