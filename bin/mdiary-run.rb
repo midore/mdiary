@@ -3,24 +3,10 @@
 #------------------------------------------
 # mdiary-run.rb
 # ruby 1.9.1p376 
-# 2010-01-04
+# 2010-01-11
 #------------------------------------------
 
-def check_arg(arg)
-  err = nil
-  # ENV['LANG']
-  ext = Encoding.default_external.name
-  return err = 'lang' unless ext == 'UTF-8'
-  # ARGV.size
-  return err = 'err0' unless arg[0]
-  arg.each_with_index{|x,no|
-    y = no%2
-    err = 'err1' if y == 0 and x.size > 6
-    err = 'err2' if y == 1 and x.size > 20
-  }
-  return err
-end
-
+exit unless Encoding.default_external.name == 'UTF-8'
 dir = File.dirname(File.dirname(File.expand_path($PROGRAM_NAME)))
 bin = File.join(dir, 'bin')
 lib = File.join(dir, 'lib')
@@ -29,13 +15,23 @@ $LOAD_PATH.delete(".")
 
 arg = ARGV
 arg.delete("")
-err = check_arg(arg)
-exit unless err.nil?
+require 'mdiary/mdiary-arg'
 
+# check arg
+st = Mdiary::CheckStart.new(arg)
+st.base
+err, arg_h = st.err, st.h
+
+# error or help
+exit if err == 'help'
+(print "#{err}\n"; exit) unless err.nil?
+
+# load conf
 conf = File.join(bin, 'mdconfig')
 exit unless File.exist?(conf)
 
+# start
 load conf, wrap=true
 require 'mdiary'
-Mdiary::Main.new().start(arg)
+Mdiary::Main.new().start(arg_h)
 
