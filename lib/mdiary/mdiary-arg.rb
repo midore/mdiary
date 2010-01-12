@@ -10,8 +10,8 @@ module Mdiary
 
     def base
       check_lang
-      check_size
-      check_arg if @err.nil?
+      return @err = 'err0' unless @arg[0]
+      check_arg
     end
     attr_reader :err, :h
 
@@ -40,32 +40,31 @@ module Mdiary
 
     def check_arg
       x, a, y, b = @arg
+      return @err = 'err1' if x.size > 6
       return help if x =~ /^-h$|^-help$/
       k1, k2 = arg_key(x), arg_key(y)
-      return @err = 'err4' if k1.nil?
+      # if not match arg_keys
+      return @err = 'err2' if k1.nil?
       @h[k1], @h[k2] = a, b
       @h[:today] = Time.now if @h.has_key?(:today)
-      @err = 'err5' if size_v(:l, 2) unless @h[:l].nil?
-      @err = 'err6' if size_v(:d, 7)
+      @err = 'Error: err3' if size_v(:a, 20)
+      @err = 'Error: err4' if size_v(:t, 20)
+      @err = 'Error: err5' if size_v(:at, 20)
+      @err = 'Error: err6' if size_v(:d, 7)
+      @err = 'Error: err7' if size_v(:l, 2)
+      @err = 'Error: err8' if size_v(:s, 20)
+      @err = 'Error: err9' if size_v(:st, 20)
     end
 
     def size_v(k, s)
-      return true if @h.has_key?(k) && @h[k].size > s
+      return nil unless @h[k]
+      return true if @h[k].size > s
     end
 
     def arg_key(x)
       return nil unless arg_keys.has_key?(x)
       m = /\-(.*)/.match(x) if x =~ /^\-/
       return  m[1].to_sym if m
-    end
-
-    def check_size
-      return @err = 'err0' unless @arg[0]
-      @arg.each_with_index{|x,no|
-        y = no%2
-        break @err = 'err1' if y == 0 and x.size > 6
-        break @err = 'err2' if y == 1 and x.size > 20
-      }
     end
 
   end
