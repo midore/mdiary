@@ -1,9 +1,10 @@
+#!/usr/bin/local/ruby19
 # coding: utf-8
 
 #------------------------------------------
 # mdiary-run.rb
 # ruby 1.9.1p376 
-# 2010-01-11
+# 2010-02-23
 #------------------------------------------
 
 exit unless Encoding.default_external.name == 'UTF-8'
@@ -16,15 +17,12 @@ $LOAD_PATH.delete(".")
 arg = ARGV
 arg.delete("")
 require 'mdiary/mdiary-arg'
+require 'time'
 
 # check arg
-st = Mdiary::CheckStart.new(arg)
-st.base
-err, arg_h = st.err, st.h
-
-# error or help
+err, arg_h = Mdiary::CheckStart.new(arg).base
 exit if err == 'help'
-(print "#{err}\n"; exit) unless err.nil?
+(print "#{err}\n"; exit) if err
 
 # load conf
 conf = File.join(bin, 'mdconfig')
