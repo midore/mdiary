@@ -1,6 +1,7 @@
 Usage
 
-after edit files "bin/mdconfig" and "bin/mdiary-run.rb",
+After edit files "bin/mdconfig" and "bin/mdiary-run.rb",
+$ chmod +x mdiary-run.rb
 
 [Add]
 $ ./mdiary-run.rb -a
