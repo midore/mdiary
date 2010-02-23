@@ -27,7 +27,7 @@ module Mdiary
     end
 
     def err_req
-      print "Please: add. none files, yet.\n" unless exist?(@now_dir)
+      print "No files in current month directory. Please, '-a' option.\n" unless exist?(@now_dir)
     end
 
     def exist?(dir)
@@ -67,28 +67,18 @@ module Mdiary
 
     def i_t(t)
       return @t = Time.now if t.nil?
-      return false unless /\d{4}/.match(t)
-      begin
-        @t = Time.parse(t)
-      rescue ArgumentError
-        return false
-      end
-      return true
+      return @t = t
     end
 
     def i_dir(t)
-      return nil unless i_t(t)
+      i_t(t)
       @now_dir = File.join(@text_dir, @t.strftime("%Y-%m")) if @t
     end
 
     def i_xdir(str)
-      if /^\d{4}\-\d{2}$/.match(str)
-        d = File.join(@text_dir, str)
-        return nil unless exist?(d)
-        return @now_dir = d
-      else
-        print "Error: example, 2009-12\n"
-      end
+      d = File.join(@text_dir, str)
+      return nil unless exist?(d)
+      return @now_dir = d
     end
 
     def set_nowdir(h)
@@ -309,7 +299,7 @@ module Mdiary
 
   end
 
-  #---------------------------- RequestSelect
+  #---------------------------- Diary
 
   class Diary
 
@@ -384,7 +374,7 @@ module Mdiary
   end
  
 
-  #---------------------------- RequestSelect
+  #---------------------------- Select
 
   class Select
 
