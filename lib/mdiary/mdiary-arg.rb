@@ -3,25 +3,23 @@ module Mdiary
   class CheckStart
 
     def initialize(arg)
-      @arg = arg
-      @err = nil
-      @h = Hash.new
+      @err = false
+      ext = Encoding.default_external.name
+      @err = true unless ext == 'UTF-8'
+      m, @h = '', Hash.new
+      arg.each{|x| (m = /^-(.*)/.match(x)) if /^-/.match(x); @h[m[1].to_sym] = x if m}
     end
 
     def base
-      check_lang
-      return @err = 'err0' unless @arg[0]
+      return help if (@h.has_key?(:h) or @h.has_key?(:help))
       check_arg
+      return [@err, @h]
     end
-    attr_reader :err, :h
 
     private
-    def check_lang
-      @err = 'lang' unless Encoding.default_external.name == 'UTF-8'
-    end
-
     def help
       arg_keys.each{|k,v| print "#{k}: #{v}\n"}
+      return 'help'
     end
 
     def arg_keys
@@ -39,32 +37,27 @@ module Mdiary
     end
 
     def check_arg
-      x, a, y, b = @arg
-      return @err = 'err1' if x.size > 6
-      return help if x =~ /^-h$|^-help$/
-      k1, k2 = arg_key(x), arg_key(y)
-      # if not match arg_keys
-      return @err = 'err2' if k1.nil?
-      @h[k1], @h[k2] = a, b
+      err_no_str = "No option"
+      err_over_str = "Over words"
+      err_time_str = "example: -at|-t \'2010/01/01/ 11:00"
+      @h.keys.each{|k| return @err = err_no_str unless arg_keys["-#{k}"]}
+      @h.each{|k,v|
+        if k == :l then (return @err = err_over_str) if v.size > 3
+        elsif k == :d then (return @err = err_over_str) if v.size > 10
+        else; (return @err = err_over_str) if v.size > 30
+        end
+      }
+      if @h.has_key?(:d)
+        @err = arg_keys['-d'] if @h[:d].size < 5
+        @err = arg_keys['-d'] unless /^\d{4}\-\d{2}$/.match(@h[:d])
+      elsif (@h.has_key?(:at) or @h.has_key?(:t))
+        (@h[:at].nil?) ? str = @h[:t] : str = @h[:at]
+        return @err = err_time_str unless /\d{4}.\d{2}.\d{2}/.match(str)
+        begin pt = Time.parse(str); rescue; return @err = 'err_time_str'; end
+        (@h[:at].nil?) ? @h[:t]=pt : @h[:at]=pt
+      end
       @h[:today] = Time.now if @h.has_key?(:today)
-      @err = 'Error: err3' if size_v(:a, 20)
-      @err = 'Error: err4' if size_v(:t, 20)
-      @err = 'Error: err5' if size_v(:at, 20)
-      @err = 'Error: err6' if size_v(:d, 7)
-      @err = 'Error: err7' if size_v(:l, 2)
-      @err = 'Error: err8' if size_v(:s, 20)
-      @err = 'Error: err9' if size_v(:st, 20)
-    end
-
-    def size_v(k, s)
-      return nil unless @h[k]
-      return true if @h[k].size > s
-    end
-
-    def arg_key(x)
-      return nil unless arg_keys.has_key?(x)
-      m = /\-(.*)/.match(x) if x =~ /^\-/
-      return  m[1].to_sym if m
+      @h[:a] = nil if @h[:a] == '-a'
     end
 
   end
