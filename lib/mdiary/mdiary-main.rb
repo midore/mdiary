@@ -41,8 +41,7 @@ module Mdiary
     end
 
     def run_view(n)
-      num = n.to_i if /\d/.match(n)
-      num ||= default_n
+      num = n ||= default_n
       a = View.new(num, @now_dir).base
       run_request(a) if a
     end
@@ -216,7 +215,7 @@ module Mdiary
     private
     def set_i_w
       return @word = /\+/i if @w == '+'
-      return print "Error: word > 2\n" if @w.size < 3
+      return print "Error: Characters > 2\n" if @w.size < 3
       begin
         @word = Regexp.new(@w, true)
       rescue RegexpError
