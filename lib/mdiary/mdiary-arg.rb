@@ -5,7 +5,7 @@ module Mdiary
     def initialize(arg)
       @err = false
       k, @h = nil, Hash.new
-      arg.each{|x| m = /(^-(.*))/.match(x); (m) ? (k = m[2].to_sym; @h[k] = nil) : @h[k] ||= x}
+      arg.each{|x| m = /^-(.*)/.match(x); (m) ? (k = m[1].to_sym; @h[k] = nil) : @h[k] ||= x}
     end
 
     def base
