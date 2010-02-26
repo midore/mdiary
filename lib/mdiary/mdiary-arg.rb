@@ -5,7 +5,7 @@ module Mdiary
     def initialize(arg)
       @err = false
       k, @h = nil, Hash.new
-      arg.each{|x| m = /^-(.*)/.match(x); (m) ? (k = m[1].to_sym; @h[k] = nil) : @h[k] ||= x}
+      arg.each{|x| m = /^-(.*)/.match(x); (m) ? (k = m[1].to_sym; @h[k] = nil) : @h[k] ||= x} 
     end
 
     def base
@@ -35,8 +35,8 @@ module Mdiary
     end
 
     def check_arg
-      return @err if check_arg_size
       return @err if check_opt
+      return @err if check_arg_size
       check_d if @h.has_key?(:d)
       check_l if @h.has_key?(:l)
       check_at_t if (@h.has_key?(:at) or @h.has_key?(:t))
@@ -59,7 +59,7 @@ module Mdiary
     def check_opt
       err_no_str = "Error: No option"
       @h.keys.each{|k| return @err = err_no_str unless arg_keys["-#{k}"]}
-      return nil
+      return nil 
     end
 
     def check_d
