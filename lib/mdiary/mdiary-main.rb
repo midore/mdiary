@@ -104,7 +104,6 @@ module Mdiary
     end
 
     def max?
-      # Add
       return nil unless exist?(@now_dir)
       max = default_file_count if defined? default_file_count
       max = 90 unless max
@@ -303,45 +302,44 @@ module Mdiary
   class Diary
 
     def initialize(title=nil, t=nil)
-      @created = t
-      @control = 'yes'
-      @title = title
+      @title, @created = title, t
+      @control, @category = 'yes', 'diary'
       @path = nil
-      @category = 'diary'
     end
 
     attr_reader :path
-
-    def load_up(h)
-      h.each{|k,v| set_ins("@#{k}".to_sym, v)}
-      return self
-    end
 
     def to_s
       ary = [posted?, created_s, @title, @category]
       printf "\t[%s]\s[%-16s]\s[%s]\s(%s)\n" % ary
     end
 
-    def detail
-      ins_to_a{|x| print "#{x.to_s}: #{get_ins(x).to_s}\n"}
+    def to_txt(a)
+      str = String.new.encode("UTF-8")
+      a.each{|i| str << "--#{i}\n#{self["@#{i}"]}\n"}
+      return str
     end
 
     def draft
       @date = created_s 
-      a = [:@date, :@control, :@category, :@title, :@content]
+      a = ['date', 'control', 'category', 'title', 'content']
       to_txt(a)
     end
 
-    def to_txt(a)
-      str = String.new.encode("UTF-8")
-      a.each{|i|
-        m = i.to_s.match(/@(.*)/)
-        str << "--#{m[1]}\n#{get_ins(i).to_s}\n" if m
-      }
-      return str
+    def detail
+      ins_a.each{|i| print i, "\s:", self[i], "\n"}
+    end
+
+    def load_up(h)
+      h.each{|k,v| self["@#{k.to_s}"] = v}
+      return self
     end
 
     private
+    alias ins_a instance_variables
+    alias []= instance_variable_set
+    alias [] instance_variable_get
+
     def created_s
       @created.strftime("%Y/%m/%d %a %p %H:%M:%S")
     end
