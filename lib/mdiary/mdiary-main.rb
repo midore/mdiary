@@ -336,6 +336,8 @@ module Mdiary
     end
 
     private
+    # refer to
+    # http://ujihisa.blogspot.com/2009/12/left-hand-values-in-ruby.html
     alias ins_a instance_variables
     alias []= instance_variable_set
     alias [] instance_variable_get
