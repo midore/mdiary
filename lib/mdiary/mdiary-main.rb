@@ -348,29 +348,8 @@ module Mdiary
       @control == "yes" ? "-" : "+"
     end
 
-    def set_ins(i, v)
-      return nil unless i_defined?(i)
-      self.instance_variable_set(i, v)
-    end
-
-    def get_ins(i)
-      self.instance_variable_get(i)
-    end
-
-    def i_defined?(i) 
-      self.instance_variable_defined?(i)
-    end
-
-    def ins_to_a
-      self.instance_variables.each{|x|
-        next unless get_ins(x)
-        yield(x)
-      }
-    end
-
   end
  
-
   #---------------------------- Select
 
   class Select
