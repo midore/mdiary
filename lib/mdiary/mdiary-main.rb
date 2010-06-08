@@ -1,6 +1,4 @@
 module Mdiary
- 
-  #---------------------- Main
 
   class Main
 
@@ -82,10 +80,8 @@ module Mdiary
 
     def set_nowdir(h)
       return i_xdir(h[:d]) unless h[:d].nil?
-      if h.has_key?(:t)
-        i_dir(h[:t])
-      elsif h.has_key?(:at)
-        i_dir(h[:at])
+      if h.has_key?(:t) then i_dir(h[:t])
+      elsif h.has_key?(:at) then i_dir(h[:at])
       else
         i_dir(nil)
       end
@@ -168,12 +164,20 @@ module Mdiary
 
     private
     def set_i_ary(d)
-      Find.find(d){|x| 
+      # 1.9.2
+      Dir.entries(d).reverse_each{|x|
         break if @ary.size == @num
         next unless File.extname(x) == '.txt'
-        diary = get_diary(x)
+        diary = get_diary(File.join(d,x))
         @ary << diary if diary
       }
+      # 1.9.1
+      #Find.find(d){|x| 
+        #break if @ary.size == @num
+        #next unless File.extname(x) == '.txt'
+        #diary = get_diary(x)
+        #@ary << diary if diary
+      #}
       return @ary
     end
 
@@ -257,6 +261,8 @@ module Mdiary
 
     def text_open(path)
       return false unless File.exist?(path)
+      @diary, @trash = nil, nil
+      sleep 1
       exec "vim #{path}"
     end
 
