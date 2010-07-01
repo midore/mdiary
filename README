@@ -11,6 +11,7 @@ $ ./setup.sh
 # Help
 $ cd bin
 $ chmod +x run-mdiary.rb
+# after edit line 1 of file run-mdiary.rb
 $ ./run-mdiary.rb -h
 
 # First run
