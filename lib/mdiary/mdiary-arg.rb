@@ -9,7 +9,6 @@ module Mdiary
     end
 
     def base
-      return "Error: $LANG must be UTF-8" unless Encoding.default_external.name == 'UTF-8'
       return help if (@h.has_key?(:h) or @h.has_key?(:help))
       return check_arg
     end
