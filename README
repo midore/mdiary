@@ -1,44 +1,84 @@
-Usage
+# Setup
+## If you like emacs or other editor, edit a file: open-vim.applescript 
+## $ emacs open-vim.applescript
+## line 12.  
+##  do script "/usr/bin/emacs " & item 1 of argv
 
-After edit files "bin/mdconfig" and "bin/mdiary-run.rb",
-$ chmod +x mdiary-run.rb
+# make data directory (~/.m_diary) at your home directory 
+$ chmod +x setup.sh
+$ ./setup.sh
 
-[Add]
-$ ./mdiary-run.rb -a
-$ ./mdiary-run.rb -a 'my title'
-$ ./mdiary-run.rb -a 'my title' -t '2009/12/01'
-$ ./mdiary-run.rb -at '2010/01/01 10:00'
+# Help
+$ cd bin
+$ chmod +x run-mdiary.rb
+$ ./run-mdiary.rb -h
+
+# First run
+$ ./run-mdiary.rb -l
+Hello, Is this first run mdiary?
+No files in current month directory. Please, '-a' option.
+
+# Make new file
+$ ./run-mdiary.rb -a
+## or $ ./run-mdiary.rb -a 'to do list' -t '2010/07/30 13:00'
+# open a new window in Terminal.app, and you be able to edit file.
+
+# View files
+% ./run-mdiary.rb -l
+1	[-] [2010/07/01 Wed PM 00:00:09] [NewTitle] (diary)
+Select [i/e/r]:
+# i: detail of a file
+# r: remove a file
+# e: edit a file
+
+# Bash or other shell
+$ vi ~/.bashrc
+  alias diary='/path/to/run-mdiary.rb'
+## or
+## $ mv run-mdiary.rb /Users/you/path/to/mybin/diary
+## $ vi ~/.bashrc
+## export $PATH=$PATH:/Users/you/path/to/mybin/
+$ source ~/.bashrc
+
+# Examples 
+$ diary -h
+$ diary -l 20
+$ diary -a 'SunnyDay' -t '2010/07/01/ 10:00'
+$ diary -s 'sunny'
+$ diary -st 'ruby'
+
+[New]
+$ diary -a
+$ diary -a 'test title'
+$ diary -a 'Sunny day' -t '2010/07/01/ 10:00'
+$ diary -at '2010/01/01 10:00'
 
 [List]
-$ ./mdiary-run.rb -l
-$ ./mdiary-run.rb -l 3
-$ ./mdiary-run.rb -d 2009-12 -l
-$ ./mdiary-run.rb -d 2009-12 -l 30
-$ ./mdiary-run.rb -d 2010 -l 30
+$ diary -l
+$ diary -l 3
+$ diary -d 2009-12 -l
+$ diary -d 2009-12 -l 30
+$ diary -d 2010 -l 30
 
 [Select today's files]
-$ ./mdiary-run.rb -today
+$ diary -today
 
 [Search]
-$ ./mdiary-run.rb -s 'my'
-$ ./mdiary-run.rb -d 2009-12 -s 'my'
+$ diary -s 'blog'
+$ diary -d 2009-12 -s 'blog'
 
 [SearchTextContents]
-$ ./mdiary-run.rb -st 'my'
-$ ./mdiary-run.rb -d 2009-12 -st 'my'
+$ diary -st 'github'
+$ diary -d 2009-12 -st 'github'
 
 [Select plus mark]
-$ ./mdiary-run.rb -d 2009-12 -s +
+$ diary -d 2009-12 -s +
 
-[Alias]
-$ vi .bashrc
-# add 
- alias 'memo'='/path/to/mdiary/bin/mdiary-run.rb'
+# enjoy! :)
+# If you can't enjoy, please E-mail to me. 
+# E-mail address: midorex atmark gmail dot com
 
-$ source .bashrc
-$ memo -l
-
-Licence
-Copyright (C) 2009 midore
+# Licence
+Copyright (C) 2009-2010 midore
 mdiary is licensed under the GPLv2
 
