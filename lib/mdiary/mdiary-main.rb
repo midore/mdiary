@@ -365,23 +365,27 @@ module Mdiary
 
     def base(str, opt)
       return false unless $stdin.tty?
-      print "#{str}:\n"
-      ans = $stdin.gets.chomp
-      exit if /^n$|^no$/.match(ans)
-      exit if ans.empty?
-      case opt
-      when true   # yes or no
-        m = /^y$|^yes$/.match(ans)
-        exit unless m
-        return true
-      when false  # return alphabet
-        exit if (/\d/.match(ans) or ans.size > 7)
-        return ans
-      else        # return number
-        i_ans = ans.to_i
-        exit unless ans
-        exit if (i_ans > opt or ans =~ /\D/)
-        return i_ans
+      begin
+        print "#{str}:\n"
+        ans = $stdin.gets.chomp
+        exit if /^n$|^no$/.match(ans)
+        exit if ans.empty?
+        case opt
+        when true   # yes or no
+          m = /^y$|^yes$/.match(ans)
+          exit unless m
+          return true
+        when false  # return alphabet
+          exit if (/\d/.match(ans) or ans.size > 7)
+          return ans
+        else        # return number
+          i_ans = ans.to_i
+          exit unless ans
+          exit if (i_ans > opt or ans =~ /\D/)
+          return i_ans
+        end
+      rescue SignalException
+        exit
       end
     end
 
