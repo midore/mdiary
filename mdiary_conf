@@ -1,0 +1,23 @@
+module Mdiary
+
+  module DiaryConfig
+    def default_n
+      7
+    end
+    def default_title
+      'NewTitle'
+    end
+    def default_file_count
+      90
+    end
+    def data_dir
+      File.join(ENV['HOME'], '.m_diary')
+    end
+    def scpt_path
+      File.join(data_dir, 'scpt', 'openvim.scpt')
+    end
+  end
+
+end
+
+$MDIARYCONF = Mdiary::DiaryConfig
