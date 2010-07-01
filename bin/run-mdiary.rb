@@ -1,9 +1,8 @@
-#!/path/to/ruby191
+#!/path/to/ruby19
 # coding: utf-8
 #
 #------------------------------------------
-# mdiary-run.rb
-# ruby 1.9.1p376 
+# run-mdiary.rb
 # 
 # 2010-06-02
 # ruby 1.9.2dev (2010-05-31 revision 28117) [x86_64-darwin10.3.0]
