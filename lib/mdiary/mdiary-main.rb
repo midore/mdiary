@@ -25,6 +25,7 @@ module Mdiary
     end
 
     def err_req
+      print "Hello, Is this first run mdiary?\n"
       print "No files in current month directory. Please, '-a' option.\n" unless exist?(@now_dir)
     end
 
@@ -138,7 +139,6 @@ module Mdiary
       return nil unless path = set_path
       text = Diary.new(@title, @t).draft
       @t, @now_dir, @title = nil, nil, nil
-      sleep 1
       writer(path, text)
       Request.new().text_open(path)
     end
@@ -262,8 +262,9 @@ module Mdiary
     def text_open(path)
       return false unless File.exist?(path)
       @diary, @trash = nil, nil
-      sleep 1
-      exec "vim #{path}"
+      # exec "vim #{path}"
+      scpt = File.join(ENV['HOME'], 'mine-scpt', 'openvim.scpt')
+      system("/usr/bin/osascript #{scpt} #{path}")
     end
 
     private
@@ -363,38 +364,23 @@ module Mdiary
   class Select
 
     def base(str, opt)
-      sec, ans = 7, ''
-      begin
-        timeout(sec){ans = receive_gets(str, opt)}
-      rescue RuntimeError
-        return print "Timeout. #{sec}sec...bye\n"
-      rescue SignalException
-        return print "\n"
-      end
-      return ans
-    end
-
-    private
-    def receive_gets(str, opt)
       return false unless $stdin.tty?
       print "#{str}:\n"
       ans = $stdin.gets.chomp
-      return false if /^n$|^no$/.match(ans)
-      return false if ans.empty?
+      exit if /^n$|^no$/.match(ans)
+      exit if ans.empty?
       case opt
       when true   # yes or no
         m = /^y$|^yes$/.match(ans)
-        return false unless m
+        exit unless m
         return true
       when false  # return alphabet
-        return false if /\d/.match(ans)
-        return false if ans.size > 7
+        exit if (/\d/.match(ans) or ans.size > 7)
         return ans
       else        # return number
         i_ans = ans.to_i
-        return false if i_ans > opt
-        return false if ans =~ /\D/
-        return false unless ans
+        exit unless ans
+        exit if (i_ans > opt or ans =~ /\D/)
         return i_ans
       end
     end
