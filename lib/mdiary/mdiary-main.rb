@@ -267,7 +267,7 @@ module Mdiary
       ## if you like a TextEdit.app ...
       ## you have to 
       ## $ compile -o ~/.m_diary/scpt/opentextedit.scpt /download/mdiary/open-textedit.applescript
-      ## After compile run, edit this line. '#' delete  
+      ## After compile run, edit a line 271. '#' delete; # mac_textedit(path) => mac_textedit(path). 
       # mac_textedit(path)
       exit
     end
