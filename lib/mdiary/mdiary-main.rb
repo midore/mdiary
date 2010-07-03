@@ -262,8 +262,7 @@ module Mdiary
     def text_open(path)
       return false unless File.exist?(path)
       @diary, @trash = nil, nil
-      # exec "vim #{path}"
-      scpt = File.join(ENV['HOME'], 'mine-scpt', 'openvim.scpt')
+      scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/openvim.scpt')
       system("/usr/bin/osascript #{scpt} #{path}")
     end
 
