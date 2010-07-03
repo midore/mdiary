@@ -14,6 +14,11 @@
 $ chmod +x setup.sh
 $ ./setup.sh
 
+## If you like a 'TextEdi.app' in /Application ...
+# $ compile -o ~/.m_diary/scpt/opentextedit.scpt /download/mdiary/open-textedit.applescript
+# Edit a file bin/mdiary/mdiary-main.rb. line 271  # mac_textedit(path) => mac_textedit(path)
+##
+
 # Help
 $ cd bin
 $ chmod +x run-mdiary.rb
