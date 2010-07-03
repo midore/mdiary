@@ -218,7 +218,7 @@ module Mdiary
     private
     def set_i_w
       return @word = /\+/i if @w == '+'
-      return print "Error: Characters > 2\n" if @w.size < 3
+      return print "Error: Characters > 2\n" if @w.size < 2
       begin
         @word = Regexp.new(@w, true)
       rescue RegexpError
