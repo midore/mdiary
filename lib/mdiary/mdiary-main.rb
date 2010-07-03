@@ -264,9 +264,21 @@ module Mdiary
       @diary, @trash = nil, nil
       scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/openvim.scpt')
       system("/usr/bin/osascript #{scpt} #{path}")
+      ## if you like a TextEdit.app ...
+      ## you have to 
+      ## $ compile -o ~/.m_diary/scpt/opentextedit.scpt /download/mdiary/open-textedit.applescript
+      ## After compile run, edit this line. '#' delete  
+      # mac_textedit(path)
+      exit
     end
 
     private
+    def mac_textedit(path)
+      scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/opentextedit.scpt')
+      path = path.gsub('/Users/','').gsub('/',':')
+      system ("/usr/bin/osascript #{scpt} #{path}")
+    end
+
     def run_req(req)
       @ary, @num = nil, nil
       case req
