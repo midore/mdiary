@@ -131,7 +131,7 @@ module Mdiary
     private
     def set_path
       f = File.join(@now_dir, @t.strftime("%Y-%m-%dT%H-%M-%S.txt"))
-      return print "Same name file is exist.\n" if File.exist?(f)
+      return print "Same name file exist.\n" if File.exist?(f)
       return f
     end
 
@@ -151,7 +151,7 @@ module Mdiary
 
     include Reader
 
-    def initialize(num=nil, dir)
+    def initialize(num=0, dir)
       @num = num
       @dir = dir
       @ary = Array.new
@@ -166,18 +166,13 @@ module Mdiary
     def set_i_ary(d)
       # 1.9.2
       Dir.entries(d).reverse_each{|x|
-        break if @ary.size == @num
+        unless @num == 0
+          break if @ary.size == @num
+        end
         next unless File.extname(x) == '.txt'
         diary = get_diary(File.join(d,x))
         @ary << diary if diary
       }
-      # 1.9.1
-      #Find.find(d){|x| 
-        #break if @ary.size == @num
-        #next unless File.extname(x) == '.txt'
-        #diary = get_diary(x)
-        #@ary << diary if diary
-      #}
       return @ary
     end
 
@@ -205,7 +200,9 @@ module Mdiary
       @w = word
       @dir = dir
       @ary = Array.new
-      @st = st if st == 'st'
+      @st = st
+      @plus = nil
+      @num = 0
     end
 
     def base
@@ -235,7 +232,7 @@ module Mdiary
         return nil
       end
     end
- 
+
   end
 
   #--------------------- Request
@@ -246,6 +243,7 @@ module Mdiary
       @ary = ary
       @num = ary.size if ary
       @trash = trash
+      @diary = nil
     end
 
     def base
@@ -256,7 +254,7 @@ module Mdiary
       end
       return clean_ary if @diary.nil?
       req = select_req
-      run_req(req) 
+      run_req(req)
     end
 
     def text_open(path)
@@ -265,9 +263,9 @@ module Mdiary
       scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/openvim.scpt')
       system("/usr/bin/osascript #{scpt} #{path}")
       ## if you like a TextEdit.app ...
-      ## you have to 
+      ## you have to
       ## $ compile -o ~/.m_diary/scpt/opentextedit.scpt /download/mdiary/open-textedit.applescript
-      ## After compile run, edit a line 271. '#' delete; # mac_textedit(path) => mac_textedit(path). 
+      ## After compile a file open-textedit.applescript, edit a line 268. '#' delete. => mac_textedit(path).
       # mac_textedit(path)
       exit
     end
@@ -276,7 +274,7 @@ module Mdiary
     def mac_textedit(path)
       scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/opentextedit.scpt')
       path = path.gsub('/Users/','').gsub('/',':')
-      system ("/usr/bin/osascript #{scpt} #{path}")
+      system("/usr/bin/osascript #{scpt} #{path}")
     end
 
     def run_req(req)
@@ -301,7 +299,7 @@ module Mdiary
     end
 
     def select_no
-      Select.new.base("Select NO", @num) 
+      Select.new.base("Select NO", @num)
     end
 
     def select_req
@@ -323,6 +321,7 @@ module Mdiary
       @title, @created = title, t
       @control, @category = 'yes', 'diary'
       @path = nil
+      @content = nil
     end
 
     attr_reader :path
@@ -339,7 +338,7 @@ module Mdiary
     end
 
     def draft
-      @date = created_s 
+      @date = created_s
       a = ['date', 'control', 'category', 'title', 'content']
       to_txt(a)
     end
@@ -369,7 +368,7 @@ module Mdiary
     end
 
   end
- 
+
   #---------------------------- Select
 
   class Select
@@ -404,3 +403,4 @@ module Mdiary
 
   # end of module
 end
+
