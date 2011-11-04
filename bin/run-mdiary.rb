@@ -13,7 +13,7 @@ module Mdiary
     def initialize
       # $LOAD_PATH.delete(".")
       conf_path = '/path/to/mdiary-conf'
-      (print "Error: not found xdiary-conf\n"; exit) unless File.exist?(conf_path)
+      (print "Error: not found mdiary-conf\n"; exit) unless File.exist?(conf_path)
       load(conf_path)
     end
     def run
