@@ -1,0 +1,18 @@
+module Mdiary
+  module DiaryConfig
+    def default_n
+      7
+    end
+    def default_title
+      'NewTitle'
+    end
+    def default_file_count
+      90
+    end
+    def data_dir
+      '/path/to/your/data-dir'
+    end
+  end
+end
+
+$MDIARYCONF = Mdiary::DiaryConfig
