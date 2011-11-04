@@ -1,16 +1,16 @@
+# --------------------
+# mdiary-io.rb
+# --------------------
+# 2011-11-03
+
 module Mdiary
-
   module Setting
-
-    include $MDIARYCONF
-
     def check_conf
-      (print "Error: Not found #{scpt_path}\n"; exit) unless File.exist?(scpt_path)
-      days = File.join(data_dir, 'text')
-      trash = File.join(data_dir, 'trash')
-      errmsg(days) unless check_dir(days)
-      errmsg(trash) unless check_dir(trash)
-      @text_dir, @trash_dir = days, trash
+      return false unless File.exist?(data_dir)
+      @text_dir = File.join(data_dir, 'text')
+      @trash_dir = File.join(data_dir, 'trash')
+      mkd(@text_dir) unless check_dir(@text_dir)
+      mkd(@trash_dir) unless check_dir(@trash_dir)
       return true
     end
 
@@ -22,28 +22,25 @@ module Mdiary
       e << File.writable?(d)
       e << File.executable?(d)
       return true unless e.include?(false)
+      return false
     end
 
-    def errmsg(d=nil)
+    def mkd(d=nil)
       begin
         Dir.mkdir(d)
         print "maked directory #{d}\n"
       end
     end
-
   end
 
   module Writer
-
     def writer(path, data)
       File.open(path, 'w:utf-8'){|f| f.print data}
-      print "Saved: #{path}\n"
+      # print "Saved: #{path}\n"
     end
-
   end
 
   module Reader
-
     def reader(path)
       return nil unless File.exist?(path)
       IO.readlines(path)
@@ -53,13 +50,14 @@ module Mdiary
       a, mark = [], /^--content$/
       IO.foreach(path){|line|
         break if line.match(mark)
-        a.push(line) 
+        a.push(line)
       }
       return ary_to_h(a, path)
     end
 
     def find_index(path)
       h = view_h(path)
+      return nil unless h
       unless @plus
         m = h.values.select{|v| v.match(@word)}
         return h unless m.empty?
@@ -68,10 +66,25 @@ module Mdiary
       end
     end
 
+    def find_posted(path)
+      h = view_h(path)
+      return nil unless h
+      return h unless h[:control] == 'yes'
+    end
+
+    def find_posted_category(path)
+      h = view_h(path)
+      return nil unless h
+      unless h[:control] == 'yes'
+        m = h[:category].match(@word)
+        return h if m
+      end
+    end
+
     def find_content(path)
       i, m = nil, nil
       a, mark = [], /^--content$/
-      IO.foreach(path){|line|
+      IO.foreach(path.to_s){|line|
         if line.match(mark)
           i = true; next
         end
@@ -91,8 +104,26 @@ module Mdiary
       h[:path] = path
       return h
     end
- 
   end
 
-  # end of moudle
+  module Osa
+    def viaosa(path)
+      osa = '/usr/bin/osascript'
+      macvim = "Tell application \"MacVim\""
+      s1 = "#{macvim} to open (POSIX file \"#{path}\") as string"
+      s2 = "#{macvim} to activate"
+      begin
+        e = system("#{osa} -e '#{s1}' -e '#{s2}'")
+        exit unless e
+      ensure
+        print "bye\n"
+        exit
+      end
+    end
+  end
+  Setting.send(:include, $MDIARYCONF)
 end
+
+## Mac OS X /usr/bin/vim
+# editor_path = "/usr/bin/vim"
+# system("/usr/bin/osascript -e 'Tell application \"Terminal\" to do script \"#{editor_path} \" & \"#{path}\"'")

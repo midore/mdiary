@@ -1,89 +1,93 @@
+# --------------------
+# mdiary-arg.rb
+# --------------------
+# 2011-11-03
+
 module Mdiary
-
   class CheckStart
-
     def initialize(arg)
       @err = false
       k, @h = nil, Hash.new
-      arg.each{|x| m = /^-(.*)/.match(x); (m) ? (k = m[1].to_sym; @h[k] = nil) : @h[k] ||= x} 
+      #begin
+        arg.each{|x| m = /^-(.*)/.match(x); (m) ? (k = m[1].to_sym; @h[k] = nil) : @h[k] ||= x}
+      #rescue
+        # return @err = "Error"
+      #end
+      @h[:today] = Time.now if @h.has_key?(:today)
     end
 
     def base
       return help if (@h.has_key?(:h) or @h.has_key?(:help))
-      return check_arg
+      return @err if check_opt
+      return @err if check_time
+      return @err if check_l
+      return @err if check_d
+      return [@err, @h]
     end
 
     private
     def help
-      arg_keys.each{|k,v| print "#{k}: #{v}\n"}
+      arg_keys.sort_by{|x| x}.each{|k,v| print "#{k}: #{v}\n"}
       return 'help'
     end
 
     def arg_keys
       a = {
-        '-a'=>'add new file with specify title.',
-        '-t'=>'example: -a \'NewTitle\' -t \'2010/01/01/ 11:00\'',
-        '-at'=>'add new file without title. example: -at \'2010/01/01/ 11:00\'', 
-        '-d'=>'specified directory. example: 2010-01',
-        '-l'=>'print list.',
-        '-today'=>'print today list',
-        '-s'=>'search in title or category, control, date',
-        '-st'=>'search in content',
-        '-h | -help'=>'this help',
+        '-a'=>"Example: -a \'NewTitle\'",
+        '-at'=>"add new file without title. Example: -at \'2010/01/01/ 11:00\'",
+        '-t'=>"add new file with title & time. Example: -a \'NewTitle'\ -t \'2010/01/01/ 11:00\'",
+        '-d'=>"specified directory. Example: -d \'2010-01\'",
+        '-l'=>"print list.",
+        '-today'=>"print today list",
+        '-s'=>"search in title or category, control, date",
+        '-st'=>"search in content",
+        '-sc'=>"search in category posted entry",
+        '-h | -help'=>"this help"
       }
-    end
-
-    def check_arg
-      return @err if check_opt
-      return @err if check_arg_size
-      check_d if @h.has_key?(:d)
-      check_l if @h.has_key?(:l)
-      check_at_t if (@h.has_key?(:at) or @h.has_key?(:t))
-      @h[:today] = Time.now if @h.has_key?(:today)
-      return [@err, @h]
-    end
-
-    def check_arg_size
-      err_over_str = "Erro: Over characters"
-      @h.each{|k,v|
-        next unless v
-        if k == :l then (return @err = err_over_str) if v.size > 3
-        elsif k == :d then (return @err = err_over_str) if v.size > 10
-        else; (return @err = err_over_str) if v.size > 30
-        end
-      }
-      return nil
+      return a
     end
 
     def check_opt
-      err_no_str = "Error: No option"
-      @h.keys.each{|k| return @err = err_no_str unless arg_keys["-#{k}"]}
-      return nil 
+      @h.keys.each{|k|
+        @err = "Error: No option" unless arg_keys["-#{k}"]
+      }
+      @err = "Error: Option" if (@h.has_key?(:at) && @h.has_key?(:a))
+      return @err
     end
 
-    def check_d
-      return @err = arg_keys['-d'] if (@h[:d].nil? or @h[:d].size < 5)
-      @err = arg_keys['-d'] unless /^\d{4}\-\d{2}$/.match(@h[:d])
-    end
-
-    def check_at_t
-      err_str = "Erro: Date. example: -at|-t \'2010/01/01/ 11:00"
-      return @err = err_str if @h.has_key?(:at) and @h.has_key?(:t)
-      (@h[:at].nil?) ? str = @h[:t] : str = @h[:at]
-      return @err = err_str unless /\d{4}.\d{2}.\d{2}/.match(str)
-      begin pt = Time.parse(str); rescue; return @err = err_str; end
-      (@h[:at].nil?) ? @h[:t]=pt : @h[:at]=pt
+    def check_time
+      t, a, err = @h[:t], @h[:at], "Error: Option DateTime'"
+      return nil unless (t or a)
+      (a.nil?) ? str = t : str = a
+      return @err = "Error: Over charactor" if str.size > 20
+      return @err = err unless /^\d{4}.\d{2}.\d{2}/.match(str)
+      begin
+        pt = Time.parse(str)
+        (@h[:at].nil?) ? @h[:t]=pt : @h[:at]=pt
+      rescue
+        return @err = err
+      end
+      return @err
     end
 
     def check_l
-      err_num_str = "Error: Not Integer"
-      return nil if @h[:l].nil?
-      return @err = err_num_str if /\D/.match(@h[:l])
-      return @err = "Error: zero" if @h[:l] == "0"
-      @h[:l] = @h[:l].to_i
+      return nil unless num = @h[:l]
+      return @err = "Error: Option -l is Over" if num.size > 2
+      return @err = "Error: Option -l is Not Integer" if /\D/.match(num)
+      return @err = "Error: Option -l is Zero" if num == "0"
+      return @err = "Error: Option -l is Over" if num.to_i > 90
+      @h[:l] = num.to_i
+      return @err
     end
 
+    def check_d
+      d, err = @h[:d], "Error: -d \'2010-01\'"
+      return nil unless d
+      return @err = err if d.size < 5
+      m = /^(\d{4})\-(\d{2})$/.match(d)
+      return @err = err unless m
+      return @err = err if m[2].to_i > 12
+      return @err
+    end
   end
-
 end
-
