@@ -1,39 +1,12 @@
-# This program work in ONLY MAC OS X 10.6
-#
-# Dependence
-# OS X 10.6.x
+# OS X 10.7.x
 # Ruby 1.9
-#
-# Setup
-## If you like emacs or other editor, edit a file: open-vim.applescript 
-## $ emacs open-vim.applescript
-## line 12.  
-##  do script "/usr/bin/emacs " & item 1 of argv
-
-# make data directory (~/.m_diary) at your home directory 
-$ chmod +x setup.sh
-$ ./setup.sh
-
-## If you like a 'TextEdi.app' in /Application ...
-# $ compile -o ~/.m_diary/scpt/opentextedit.scpt /download/mdiary/open-textedit.applescript
-# Edit a file bin/mdiary/mdiary-main.rb. line 271  # mac_textedit(path) => mac_textedit(path)
-##
+# MacVim
 
 # Help
-$ cd bin
-$ chmod +x run-mdiary.rb
-# after edit line 1 of file run-mdiary.rb
 $ ./run-mdiary.rb -h
-
-# First run
-$ ./run-mdiary.rb -l
-Hello, Is this first run mdiary?
-No files in current month directory. Please, '-a' option.
 
 # Make new file
 $ ./run-mdiary.rb -a
-## or $ ./run-mdiary.rb -a 'to do list' -t '2010/07/30 13:00'
-# open a new window in Terminal.app, and you be able to edit file.
 
 # View files
 % ./run-mdiary.rb -l
@@ -41,23 +14,7 @@ $ ./run-mdiary.rb -a
 Select [i/e/r]:
 # i: detail of a file
 # r: remove a file
-# e: edit a file
-
-# Bash or other shell
-$ vi ~/.bashrc
-  alias diary='/path/to/run-mdiary.rb'
-## or
-## $ mv run-mdiary.rb /Users/you/path/to/mybin/diary
-## $ vi ~/.bashrc
-## export $PATH=$PATH:/Users/you/path/to/mybin/
-$ source ~/.bashrc
-
-# Examples 
-$ diary -h
-$ diary -l 20
-$ diary -a 'SunnyDay' -t '2010/07/01/ 10:00'
-$ diary -s 'sunny'
-$ diary -st 'ruby'
+# e: open your MacVim and edit a file
 
 [New]
 $ diary -a
@@ -86,11 +43,7 @@ $ diary -d 2009-12 -st 'github'
 [Select plus mark]
 $ diary -d 2009-12 -s +
 
-# enjoy! :)
-# If you can't enjoy, please E-mail to me. 
-# E-mail address: midorex atmark gmail dot com
-
 # Licence
-Copyright (C) 2009-2010 midore
+Copyright (C) 2009-2011 midore
 mdiary is licensed under the GPLv2
 
