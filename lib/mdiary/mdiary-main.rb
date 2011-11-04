@@ -1,36 +1,55 @@
+# --------------------
+# mdiay-main.rb
+# --------------------
+# 2011-11-03
+
 module Mdiary
-
   class Main
-
     include Setting
-    def start(arg_h)
-      return nil unless check_conf
-      command(arg_h)
+    def initialize(h)
+      return print "Error: Look your 'mdiary_conf' \n" unless check_conf
+      @num = h[:l] ||= default_n
+      @h, @d  = h, h[:d]
+      @h.delete(:d)
+      (@d.nil?) ? @dir = @text_dir : @dir = File.join(@text_dir, @d)
+      command
     end
 
     private
-    def command(h)
-      set_nowdir(h) # define @now_dir, @t
-      return nil unless @now_dir
-      x = h.keys[0]
-      return run_add(h[:a]) if x == :a or x == :at
-      return err_req unless exist?(@now_dir)
-      (x == :d) ? x = h.keys[1] : x = h.keys[0]
-      case x
-      when :l then run_view(h[:l])
-      when :s then run_search(h[:s], nil)
-      when :st then run_search(h[:st], 'st')
-      when :today then run_today
+    def command
+      case @h.keys.to_s
+      when /today/
+        run_today
+      when /s|st|sc/
+        run_search
+      when /at|a/
+        run_add
+      when /l/
+        run_view
       end
     end
 
-    def err_req
-      print "Hello, Is this first run mdiary?\n"
-      print "No files in current month directory. Please, '-a' option.\n" unless exist?(@now_dir)
+    def run_view
+      a = View.new(@dir, @num).base
+      run_request(a)
     end
 
-    def exist?(dir)
-      File.exist?(dir)
+    def run_search
+      k, w = @h.to_a[0][0], @h.to_a[0][1]
+      return print "Error: Search word error\n" unless w
+      w = nil if /\+/.match(w)
+      a = Search.new(@dir, @num)
+      a.plus = 'plus' if (@h[:sc] or w.nil? )
+      a.opt = @h[:st] if k == :st
+      res = a.base(w)
+      run_request(res) if res
+    end
+
+    def run_today
+      w = @h[:today].strftime("%Y/%m/%d")
+      a = Search.new(@dir, @num).base(w)
+      (return print "Not found.\n") if a.empty?
+      run_request(a)
     end
 
     def run_request(a)
@@ -39,292 +58,61 @@ module Mdiary
       Request.new(a, @trash_dir).base
     end
 
-    def run_view(n)
-      num = n ||= default_n
-      a = View.new(num, @now_dir).base
-      run_request(a) if a
+    def run_add
+      title = @h[:a] ||= default_title
+      t = @h[:t] ||= @h[:at] ||=Time.now
+      d = File.join(@text_dir, t.strftime("%Y-%m"))
+      f = Add.new(d, title, t).base
+      edit(f) if f
     end
 
-    def run_search(w, st)
-      return nil unless w
-      a = Search.new(w, @now_dir, st).base
-      run_request(a) if a
+    def edit(f)
+      return false unless File.exist?(f)
+      Request.new(nil, @trash_dir).text_open(f)
     end
-
-    def run_today
-      w = Time.now.strftime("%Y/%m/%d")
-      run_search(w, nil)
-    end
-
-    def run_add(title)
-      return nil if exist?(@now_dir) and max?
-      make_dir(@now_dir) unless exist?(@now_dir)
-      title ||= default_title
-      Add.new(title, @t).base(@now_dir)
-    end
-
-    def i_t(t)
-      return @t = Time.now if t.nil?
-      return @t = t
-    end
-
-    def i_dir(t)
-      i_t(t)
-      @now_dir = File.join(@text_dir, @t.strftime("%Y-%m")) if @t
-    end
-
-    def i_xdir(str)
-      d = File.join(@text_dir, str)
-      return nil unless exist?(d)
-      return @now_dir = d
-    end
-
-    def set_nowdir(h)
-      return i_xdir(h[:d]) unless h[:d].nil?
-      if h.has_key?(:t) then i_dir(h[:t])
-      elsif h.has_key?(:at) then i_dir(h[:at])
-      else
-        i_dir(nil)
-      end
-    end
-
-    def make_dir(path)
-      # Add
-      begin
-        Dir.mkdir(path)
-        print "maked directory: #{path}\n"
-      rescue
-        print "Error: make directory.\"#{path}\"\n"
-        return false
-      end
-      return true if exist?(path)
-    end
-
-    def max?
-      return nil unless exist?(@now_dir)
-      max = default_file_count if defined? default_file_count
-      max = 90 unless max
-      p s = Dir.entries(@now_dir).select{|x| /\.txt$/.match(x)}.size
-      return false if s < max
-      print "too many files. Edit bin/mdconfig.\n"
-      return true
-    end
-
   end
-
-  #---------------------- Add
 
   class Add
-
     include Writer
-
-    def initialize(title=nil, t)
-      @title = title
-      @t = t
+    def initialize(d, title, t)
+      @d, @title, @t = d, title, t
+      @f = File.join(d, t.strftime("%Y-%m-%dT%H-%M-%S.txt"))
     end
 
-    def base(d)
-      @now_dir = d
-      make_diary
+    def base
+      return print "Same name file exist.\n" if File.exist?(@f)
+      unless File.exist?(@d)
+        return nil unless make_dir
+      end
+      make_file
+      return @f
     end
 
     private
-    def set_path
-      f = File.join(@now_dir, @t.strftime("%Y-%m-%dT%H-%M-%S.txt"))
-      return print "Same name file exist.\n" if File.exist?(f)
-      return f
-    end
-
-    def make_diary
-      return nil unless path = set_path
+    def make_file
       text = Diary.new(@title, @t).draft
-      @t, @now_dir, @title = nil, nil, nil
-      writer(path, text)
-      Request.new().text_open(path)
+      writer(@f, text)
     end
 
-  end
-
-  #---------------------- View
-
-  class View
-
-    include Reader
-
-    def initialize(num=0, dir)
-      @num = num
-      @dir = dir
-      @ary = Array.new
-    end
-
-    def base
-      return print "Error: default_n\n" if @num < 1
-      set_i_ary(@dir)
-    end
-
-    private
-    def set_i_ary(d)
-      # 1.9.2
-      Dir.entries(d).reverse_each{|x|
-        unless @num == 0
-          break if @ary.size == @num
-        end
-        next unless File.extname(x) == '.txt'
-        diary = get_diary(File.join(d,x))
-        @ary << diary if diary
-      }
-      return @ary
-    end
-
-    def get_diary(x)
+    def make_dir
       begin
-        h = view_h(x)
-        to_obj(h) unless h.empty?
+        Dir.mkdir(@d)
+        print "maked directory: #{@d}\n"
       rescue
-        return nil
+        print "Error: make directory.\"#{@d}\"\n"
+        return false
       end
+      return true if File.exist?(@d)
     end
-
-    def to_obj(h)
-      t = Time.parse(h[:date])
-      Diary.new(nil, t).load_up(h)
-    end
-
   end
-
-  #---------------------- Search
-
-  class Search < View
-
-    def initialize(word, dir, st=nil)
-      @w = word
-      @dir = dir
-      @ary = Array.new
-      @st = st
-      @plus = nil
-      @num = 0
-    end
-
-    def base
-      return nil unless set_i_w
-      @plus = 'plus' if @word == /\+/i
-      return nil if @st && @plus
-      set_i_ary(@dir)
-    end
-
-    private
-    def set_i_w
-      return @word = /\+/i if @w == '+'
-      return print "Error: Characters > 2\n" if @w.size < 2
-      begin
-        @word = Regexp.new(@w, true)
-      rescue RegexpError
-        @word = nil
-      end
-    end
-
-    def get_diary(x)
-      begin
-        h = find_index(x) unless @st
-        h = find_content(x) unless @st.nil?
-        to_obj(h) unless h.nil?
-      rescue
-        return nil
-      end
-    end
-
-  end
-
-  #--------------------- Request
-
-  class Request
-
-    def initialize(ary=nil, trash=nil)
-      @ary = ary
-      @num = ary.size if ary
-      @trash = trash
-      @diary = nil
-    end
-
-    def base
-      @diary = @ary[0] if @num == 1
-      unless @diary
-        n = select_no
-        @diary = @ary[n-1] if n
-      end
-      return clean_ary if @diary.nil?
-      req = select_req
-      run_req(req)
-    end
-
-    def text_open(path)
-      return false unless File.exist?(path)
-      @diary, @trash = nil, nil
-      scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/openvim.scpt')
-      system("/usr/bin/osascript #{scpt} #{path}")
-      ## if you like a TextEdit.app ...
-      ## you have to
-      ## $ compile -o ~/.m_diary/scpt/opentextedit.scpt /download/mdiary/open-textedit.applescript
-      ## After compile a file open-textedit.applescript, edit a line 268. '#' delete. => mac_textedit(path).
-      # mac_textedit(path)
-      exit
-    end
-
-    private
-    def mac_textedit(path)
-      scpt = File.join(ENV['HOME'], '.m_diary', 'scpt/opentextedit.scpt')
-      path = path.gsub('/Users/','').gsub('/',':')
-      system("/usr/bin/osascript #{scpt} #{path}")
-    end
-
-    def run_req(req)
-      @ary, @num = nil, nil
-      case req
-      when false then return nil
-      when 'i' then @diary.detail
-      when 'r' then text_remove(@diary.path)
-      when 'e' then text_open(@diary.path)
-      end
-    end
-
-    def text_remove(path)
-      return nil unless File.exist?(path)
-      new = File.join(@trash, File.basename(path))
-      begin
-        File.rename(path, new)
-        print "Removed: #{new}\n"
-      rescue
-        return print "Error: trash directory\n"
-      end
-    end
-
-    def select_no
-      Select.new.base("Select NO", @num)
-    end
-
-    def select_req
-      str = "Select [i/e/r]"
-      Select.new.base(str, false)
-    end
-
-    def clean_ary
-      @ary, @num = nil, nil
-    end
-
-  end
-
-  #---------------------------- Diary
 
   class Diary
-
+    attr_reader :path, :category,:date
     def initialize(title=nil, t=nil)
       @title, @created = title, t
       @control, @category = 'yes', 'diary'
-      @path = nil
-      @content = nil
+      @path = nil, @content = nil
     end
-
-    attr_reader :path
 
     def to_s
       ary = [posted?, created_s, @title, @category]
@@ -332,7 +120,7 @@ module Mdiary
     end
 
     def to_txt(a)
-      str = String.new.encode("UTF-8")
+      str = ""
       a.each{|i| str << "--#{i}\n#{self["@#{i}"]}\n"}
       return str
     end
@@ -353,8 +141,6 @@ module Mdiary
     end
 
     private
-    # refer to
-    # http://ujihisa.blogspot.com/2009/12/left-hand-values-in-ruby.html
     alias ins_a instance_variables
     alias []= instance_variable_set
     alias [] instance_variable_get
@@ -366,13 +152,135 @@ module Mdiary
     def posted?
       @control == "yes" ? "-" : "+"
     end
-
   end
 
-  #---------------------------- Select
+  class View
+    include Reader
+    def initialize(d, n)
+      @ary, @d, @n = Array.new, d, n
+    end
+
+    def base
+      set_ary
+    end
+
+    private
+    def set_ary
+     Find.find(@d).reverse_each{|f|
+       break if @ary.size == @n
+       next unless File.extname(f) == '.txt'
+       diary = get_diary(f)
+       next if diary.nil?
+       @ary << diary
+      }
+      return @ary
+    end
+
+    def get_diary(x)
+      #begin
+        h = view_h(x)
+        to_obj(h) unless h.empty?
+      #rescue
+      #  return nil
+      #end
+    end
+
+    def to_obj(h)
+      # 1.9.3
+      # t = Time.parse(h[:date])
+      # => parse error
+      t = Time.parse(h[:date].gsub(/AM|PM/,''))
+      d =  Diary.new(nil, t).load_up(h)
+      return d
+    end
+  end
+
+  class Search < View
+    attr_writer :plus, :opt
+    def initialize(d, n)
+      @ary, @d, @n = Array.new, d, n
+      @opt, @word, @plus = nil, nil, nil
+    end
+
+    def base(w)
+      @word = Regexp.new(w, true) if w
+      set_ary
+    end
+
+    private
+    def get_diary(x)
+      h = plus_search(x) if @plus
+      h = normal_search(x) unless @plus
+      to_obj(h) unless h.nil?
+    end
+
+    def plus_search(x)
+       return find_posted(x) unless @word
+       return find_posted_category(x) if @word
+    end
+
+    def normal_search(x)
+       return find_index(x) unless @opt
+       return find_content(x) if @opt
+    end
+  end
+
+  class Request
+    self.send(:include, Osa)
+    def initialize(a, trash)
+      @ary, @trash = a, trash
+      @diary = nil
+    end
+
+    def base
+      @diary = @ary[0] if @ary.size == 1
+      unless @diary
+        n = select_no
+        @diary = @ary[n-1] if n
+      end
+      return nil if @diary.nil?
+      run_req(select_req)
+    end
+
+    def run_req(req)
+      @ary = nil
+      case req
+      when false then return nil
+      when 'i' then @diary.detail
+      when 'r' then text_remove(@diary.path)
+      when 'e' then text_open(@diary.path)
+      end
+      exit
+    end
+
+    def text_open(f)
+      return false unless File.exist?(f)
+      viaosa(f)
+    end
+
+    private
+    def text_remove(path)
+      return nil unless File.exist?(path)
+      new = File.join(@trash, File.basename(path))
+      begin
+        File.rename(path, new)
+        print "Removed: #{new}\n"
+      rescue
+        return print "Error: trash directory\n"
+      end
+    end
+
+    def select_no
+      Select.new.base("Select NO", @ary.size)
+    end
+
+    def select_req
+      str = "Select [i/e/r]"
+      Select.new.base(str, false)
+    end
+  end
 
   class Select
-
     def base(str, opt)
       return false unless $stdin.tty?
       begin
@@ -398,9 +306,7 @@ module Mdiary
         exit
       end
     end
-
   end
 
-  # end of module
 end
 
