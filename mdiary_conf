@@ -1,5 +1,4 @@
 module Mdiary
-
   module DiaryConfig
     def default_n
       7
@@ -11,13 +10,9 @@ module Mdiary
       90
     end
     def data_dir
-      File.join(ENV['HOME'], '.m_diary')
-    end
-    def scpt_path
-      File.join(data_dir, 'scpt', 'openvim.scpt')
+      '/path/to/your/data-dir'
     end
   end
-
 end
 
 $MDIARYCONF = Mdiary::DiaryConfig
