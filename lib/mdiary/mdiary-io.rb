@@ -1,7 +1,7 @@
 # --------------------
 # mdiary-io.rb
 # --------------------
-# 2011-11-03
+# 2012-10-09
 
 module Mdiary
   module Setting
@@ -108,16 +108,10 @@ module Mdiary
 
   module Osa
     def viaosa(path)
-      osa = '/usr/bin/osascript'
-      macvim = "Tell application \"MacVim\""
-      s1 = "#{macvim} to open (POSIX file \"#{path}\") as string"
-      s2 = "#{macvim} to activate"
       begin
-        e = system("#{osa} -e '#{s1}' -e '#{s2}'")
-        exit unless e
+        system("open -a 'MacVim' #{path}")
       ensure
-        print "bye\n"
-        exit
+        return print "bye\n"
       end
     end
   end
