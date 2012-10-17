@@ -1,4 +1,3 @@
-#!/path/to/ruby19
 # coding: utf-8
 #
 #------------------------------------------
@@ -11,7 +10,6 @@
 module Mdiary
   class Start
     def initialize
-      # $LOAD_PATH.delete(".")
       conf_path = '/path/to/mdiary-conf'
       (print "Error: not found mdiary-conf\n"; exit) unless File.exist?(conf_path)
       load(conf_path)
