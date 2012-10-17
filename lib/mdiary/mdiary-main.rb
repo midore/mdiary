@@ -186,9 +186,6 @@ module Mdiary
     end
 
     def to_obj(h)
-      # 1.9.3
-      # t = Time.parse(h[:date])
-      # => parse error
       t = Time.parse(h[:date].gsub(/AM|PM/,''))
       d =  Diary.new(nil, t).load_up(h)
       return d
