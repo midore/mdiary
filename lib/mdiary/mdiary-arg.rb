@@ -1,7 +1,6 @@
 # --------------------
 # mdiary-arg.rb
 # --------------------
-# 2011-11-03
 
 module Mdiary
   class CheckStart
