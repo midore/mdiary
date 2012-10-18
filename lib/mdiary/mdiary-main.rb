@@ -1,7 +1,6 @@
 # --------------------
 # mdiay-main.rb
 # --------------------
-# 2011-11-03
 
 module Mdiary
   class Main
@@ -187,7 +186,7 @@ module Mdiary
 
     def to_obj(h)
       t = Time.parse(h[:date].gsub(/AM|PM/,''))
-      d =  Diary.new(nil, t).load_up(h)
+      d = Diary.new(nil, t).load_up(h)
       return d
     end
   end
@@ -306,4 +305,5 @@ module Mdiary
   end
 
 end
+
 
