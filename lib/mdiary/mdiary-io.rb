@@ -1,7 +1,6 @@
 # --------------------
 # mdiary-io.rb
 # --------------------
-# 2012-10-09
 
 module Mdiary
   module Setting
